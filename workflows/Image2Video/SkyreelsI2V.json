@@ -1,0 +1,1191 @@
+{
+  "last_node_id": 94,
+  "last_link_id": 74,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "HyVideoDecode",
+      "pos": [
+        1690,
+        130
+      ],
+      "size": [
+        315,
+        150
+      ],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 23
+        },
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 24
+        }
+      ],
+      "outputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "links": [
+            26
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoDecode"
+      },
+      "widgets_values": [
+        true,
+        64,
+        128,
+        false
+      ]
+    },
+    {
+      "id": 34,
+      "type": "VHS_VideoCombine",
+      "pos": [
+        2105,
+        130
+      ],
+      "size": [
+        219.3603515625,
+        460.9708557128906
+      ],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 26
+        },
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "meta_batch",
+          "type": "VHS_BatchManager",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "shape": 7,
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Filenames",
+          "type": "VHS_FILENAMES",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "VHS_VideoCombine"
+      },
+      "widgets_values": {
+        "frame_rate": 24,
+        "loop_count": 0,
+        "filename_prefix": "AnimateDiff",
+        "format": "video/h264-mp4",
+        "pix_fmt": "yuv420p",
+        "crf": 19,
+        "save_metadata": true,
+        "trim_to_audio": false,
+        "pingpong": false,
+        "save_output": true,
+        "videopreview": {
+          "hidden": false,
+          "paused": false,
+          "params": {
+            "filename": "AnimateDiff_00033.mp4",
+            "subfolder": "",
+            "type": "output",
+            "format": "video/h264-mp4",
+            "frame_rate": 24,
+            "workflow": "AnimateDiff_00033.png",
+            "fullpath": "/workspace/ComfyUI/output/AnimateDiff_00033.mp4"
+          },
+          "muted": false
+        }
+      }
+    },
+    {
+      "id": 77,
+      "type": "JoinStringMulti",
+      "pos": [
+        451.8479919433594,
+        219.72665405273438
+      ],
+      "size": [
+        210,
+        170
+      ],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "string_1",
+          "type": "STRING",
+          "widget": {
+            "name": "string_1"
+          },
+          "link": 48
+        },
+        {
+          "name": "string_2",
+          "type": "STRING",
+          "widget": {
+            "name": "string_2"
+          },
+          "link": 72
+        },
+        {
+          "name": "string_3",
+          "type": "STRING",
+          "link": 50
+        }
+      ],
+      "outputs": [
+        {
+          "name": "string",
+          "type": "STRING",
+          "links": [
+            51
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "JoinStringMulti"
+      },
+      "widgets_values": [
+        3,
+        "",
+        "",
+        " ",
+        false,
+        null
+      ]
+    },
+    {
+      "id": 74,
+      "type": "StringConstantMultiline",
+      "pos": [
+        102.78241729736328,
+        148.85391235351562
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            48
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StringConstantMultiline"
+      },
+      "widgets_values": [
+        "<|start_header_id|>user<|end_header_id|>\n\n",
+        false
+      ]
+    },
+    {
+      "id": 7,
+      "type": "HyVideoVAELoader",
+      "pos": [
+        1321.366455078125,
+        -0.9230702519416809
+      ],
+      "size": [
+        315,
+        82
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "compile_args",
+          "type": "COMPILEARGS",
+          "shape": 7,
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "vae",
+          "type": "VAE",
+          "links": [
+            23,
+            65
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoVAELoader"
+      },
+      "widgets_values": [
+        "hunyuan_video_vae_bf16.safetensors",
+        "bf16"
+      ]
+    },
+    {
+      "id": 39,
+      "type": "HyVideoTorchCompileSettings",
+      "pos": [
+        -60,
+        -960
+      ],
+      "size": [
+        441,
+        274
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "torch_compile_args",
+          "type": "COMPILEARGS",
+          "links": [
+            20
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoTorchCompileSettings"
+      },
+      "widgets_values": [
+        "inductor",
+        false,
+        "default",
+        false,
+        64,
+        true,
+        true,
+        true,
+        true,
+        true
+      ]
+    },
+    {
+      "id": 70,
+      "type": "HyVideoCustomPromptTemplate",
+      "pos": [
+        -0.9129809737205505,
+        64.80696868896484
+      ],
+      "size": [
+        441,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "hyvid_prompt_template",
+          "type": "PROMPT_TEMPLATE",
+          "links": [
+            43
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoCustomPromptTemplate"
+      },
+      "widgets_values": [
+        "<|start_header_id|>system<|end_header_id|>\n\nDescribe the video by detailing the following aspects: 1. The main content and theme of the video.2. The color, shape, size, texture, quantity, text, and spatial relationships of the objects.3. Actions, events, behaviors temporal relationships, physical movement changes of the objects.4. background environment, light, style and atmosphere.5. camera angles, movements, and transitions used in the video:<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{}<|eot_id|>",
+        95
+      ]
+    },
+    {
+      "id": 16,
+      "type": "DownloadAndLoadHyVideoTextEncoder",
+      "pos": [
+        -83.07355499267578,
+        -187.1150360107422
+      ],
+      "size": [
+        441,
+        202
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "hyvid_text_encoder",
+          "type": "HYVIDTEXTENCODER",
+          "links": [
+            25
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "DownloadAndLoadHyVideoTextEncoder"
+      },
+      "widgets_values": [
+        "Kijai/llava-llama-3-8b-text-encoder-tokenizer",
+        "openai/clip-vit-large-patch14",
+        "fp16",
+        false,
+        2,
+        "bnb_nf4",
+        "offload_device"
+      ]
+    },
+    {
+      "id": 89,
+      "type": "HyVideoTeaCache",
+      "pos": [
+        331.8542175292969,
+        535.8286743164062
+      ],
+      "size": [
+        315,
+        58
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 5,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "teacache_args",
+          "type": "TEACACHEARGS",
+          "links": [
+            64
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoTeaCache"
+      },
+      "widgets_values": [
+        0.2
+      ]
+    },
+    {
+      "id": 84,
+      "type": "HyVideoEnhanceAVideo",
+      "pos": [
+        365.2439270019531,
+        487.2870178222656
+      ],
+      "size": [
+        352.79998779296875,
+        154
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 6,
+      "mode": 4,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "feta_args",
+          "type": "FETAARGS",
+          "links": [
+            59
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoEnhanceAVideo"
+      },
+      "widgets_values": [
+        3,
+        true,
+        false,
+        0,
+        0.6
+      ]
+    },
+    {
+      "id": 42,
+      "type": "HyVideoLoraSelect",
+      "pos": [
+        -20,
+        -480
+      ],
+      "size": [
+        360.07684326171875,
+        106.08268737792969
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "prev_lora",
+          "type": "HYVIDLORA",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "blocks",
+          "type": "SELECTEDBLOCKS",
+          "shape": 7,
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "lora",
+          "type": "HYVIDLORA",
+          "links": [
+            22
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoLoraSelect"
+      },
+      "widgets_values": [
+        "img2vid960x544.safetensors",
+        1
+      ]
+    },
+    {
+      "id": 91,
+      "type": "ImageResizeKJ",
+      "pos": [
+        322.3761291503906,
+        717.3536376953125
+      ],
+      "size": [
+        315,
+        266
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 69
+        },
+        {
+          "name": "get_image_size",
+          "type": "IMAGE",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "width_input",
+          "type": "INT",
+          "shape": 7,
+          "widget": {
+            "name": "width_input"
+          },
+          "link": null
+        },
+        {
+          "name": "height_input",
+          "type": "INT",
+          "shape": 7,
+          "widget": {
+            "name": "height_input"
+          },
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            66
+          ],
+          "slot_index": 0
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "links": [
+            67
+          ],
+          "slot_index": 1
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "links": [
+            68
+          ],
+          "slot_index": 2
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ImageResizeKJ"
+      },
+      "widgets_values": [
+        960,
+        544,
+        "lanczos",
+        false,
+        2,
+        0,
+        0,
+        "disabled"
+      ]
+    },
+    {
+      "id": 90,
+      "type": "HyVideoEncode",
+      "pos": [
+        732.1610107421875,
+        688.809814453125
+      ],
+      "size": [
+        315,
+        198
+      ],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 65
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 66
+        }
+      ],
+      "outputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "links": [
+            74
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoEncode"
+      },
+      "widgets_values": [
+        true,
+        64,
+        256,
+        true,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 30,
+      "type": "HyVideoTextEncode",
+      "pos": [
+        716.424560546875,
+        136.38084411621094
+      ],
+      "size": [
+        443.4000244140625,
+        200
+      ],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text_encoders",
+          "type": "HYVIDTEXTENCODER",
+          "link": 25
+        },
+        {
+          "name": "custom_prompt_template",
+          "type": "PROMPT_TEMPLATE",
+          "shape": 7,
+          "link": 43
+        },
+        {
+          "name": "clip_l",
+          "type": "CLIP",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "hyvid_cfg",
+          "type": "HYVID_CFG",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 51
+        }
+      ],
+      "outputs": [
+        {
+          "name": "hyvid_embeds",
+          "type": "HYVIDEMBEDS",
+          "links": [
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoTextEncode"
+      },
+      "widgets_values": [
+        "1. a flxnkvg with blonde hair and brown highlights wearing a raincoat and holding an umbrealla 2. The woman is on the sidewalk and cars are driving past her. 3. The woman is walking down a city street in the rai4. The background is a city street. 5. wide angle camera, following the woman's movement",
+        "bad quality video",
+        "custom"
+      ]
+    },
+    {
+      "id": 92,
+      "type": "LoadImage",
+      "pos": [
+        -620.366455078125,
+        655.638427734375
+      ],
+      "size": [
+        882.8825073242188,
+        940.4159545898438
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            69
+          ]
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": [
+        "land_fBlonde720_2.png",
+        "image"
+      ]
+    },
+    {
+      "id": 75,
+      "type": "StringConstantMultiline",
+      "pos": [
+        -209.1373748779297,
+        203.27561950683594
+      ],
+      "size": [
+        408.89788818359375,
+        137.44107055664062
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            72
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StringConstantMultiline"
+      },
+      "widgets_values": [
+        "A woman walking down a city street",
+        false
+      ]
+    },
+    {
+      "id": 76,
+      "type": "StringConstantMultiline",
+      "pos": [
+        -17.395174026489258,
+        441.7353210449219
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {
+        "collapsed": true
+      },
+      "order": 10,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            50
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "StringConstantMultiline"
+      },
+      "widgets_values": [
+        "\n\n<|eot_id|>",
+        false
+      ]
+    },
+    {
+      "id": 1,
+      "type": "HyVideoModelLoader",
+      "pos": [
+        765.7723388671875,
+        -160.7471923828125
+      ],
+      "size": [
+        379.30902099609375,
+        242
+      ],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "compile_args",
+          "type": "COMPILEARGS",
+          "shape": 7,
+          "link": 20
+        },
+        {
+          "name": "block_swap_args",
+          "type": "BLOCKSWAPARGS",
+          "shape": 7,
+          "link": 58
+        },
+        {
+          "name": "lora",
+          "type": "HYVIDLORA",
+          "shape": 7,
+          "link": 22
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "HYVIDEOMODEL",
+          "links": [
+            27
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoModelLoader"
+      },
+      "widgets_values": [
+        "skyreels_hunyuan_i2v_fp8_e4m3fn.safetensors",
+        "bf16",
+        "fp8_e4m3fn",
+        "offload_device",
+        "sageattn_varlen",
+        false,
+        true
+      ]
+    },
+    {
+      "id": 35,
+      "type": "HyVideoBlockSwap",
+      "pos": [
+        10,
+        -650
+      ],
+      "size": [
+        315,
+        130
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "block_swap_args",
+          "type": "BLOCKSWAPARGS",
+          "links": [
+            58
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoBlockSwap"
+      },
+      "widgets_values": [
+        10,
+        0,
+        true,
+        true
+      ]
+    },
+    {
+      "id": 45,
+      "type": "HyVideoSampler",
+      "pos": [
+        1275,
+        130
+      ],
+      "size": [
+        315,
+        611.1666870117188
+      ],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "HYVIDEOMODEL",
+          "link": 27
+        },
+        {
+          "name": "hyvid_embeds",
+          "type": "HYVIDEMBEDS",
+          "link": 28
+        },
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "image_cond_latents",
+          "type": "LATENT",
+          "shape": 7,
+          "link": 74
+        },
+        {
+          "name": "stg_args",
+          "type": "STGARGS",
+          "shape": 7,
+          "link": null
+        },
+        {
+          "name": "context_options",
+          "type": "HYVIDCONTEXT",
+          "shape": 7,
+          "link": 59
+        },
+        {
+          "name": "feta_args",
+          "type": "FETAARGS",
+          "shape": 7,
+          "link": 64
+        },
+        {
+          "name": "width",
+          "type": "INT",
+          "widget": {
+            "name": "width"
+          },
+          "link": 67
+        },
+        {
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": 68
+        },
+        {
+          "name": "teacache_args",
+          "type": "TEACACHEARGS",
+          "shape": 7,
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "links": [
+            24
+          ]
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "HyVideoSampler"
+      },
+      "widgets_values": [
+        1280,
+        720,
+        49,
+        14,
+        12,
+        6,
+        942698171307001,
+        "randomize",
+        true,
+        1,
+        "SDE-DPMSolverMultistepScheduler",
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      20,
+      39,
+      0,
+      1,
+      0,
+      "COMPILEARGS"
+    ],
+    [
+      22,
+      42,
+      0,
+      1,
+      2,
+      "HYVIDLORA"
+    ],
+    [
+      23,
+      7,
+      0,
+      5,
+      0,
+      "VAE"
+    ],
+    [
+      24,
+      45,
+      0,
+      5,
+      1,
+      "LATENT"
+    ],
+    [
+      25,
+      16,
+      0,
+      30,
+      0,
+      "HYVIDTEXTENCODER"
+    ],
+    [
+      26,
+      5,
+      0,
+      34,
+      0,
+      "IMAGE"
+    ],
+    [
+      27,
+      1,
+      0,
+      45,
+      0,
+      "HYVIDEOMODEL"
+    ],
+    [
+      28,
+      30,
+      0,
+      45,
+      1,
+      "HYVIDEMBEDS"
+    ],
+    [
+      43,
+      70,
+      0,
+      30,
+      1,
+      "PROMPT_TEMPLATE"
+    ],
+    [
+      48,
+      74,
+      0,
+      77,
+      0,
+      "STRING"
+    ],
+    [
+      50,
+      76,
+      0,
+      77,
+      2,
+      "STRING"
+    ],
+    [
+      51,
+      77,
+      0,
+      30,
+      4,
+      "STRING"
+    ],
+    [
+      58,
+      35,
+      0,
+      1,
+      1,
+      "BLOCKSWAPARGS"
+    ],
+    [
+      59,
+      84,
+      0,
+      45,
+      5,
+      "FETAARGS"
+    ],
+    [
+      64,
+      89,
+      0,
+      45,
+      6,
+      "TEACACHEARGS"
+    ],
+    [
+      65,
+      7,
+      0,
+      90,
+      0,
+      "VAE"
+    ],
+    [
+      66,
+      91,
+      0,
+      90,
+      1,
+      "IMAGE"
+    ],
+    [
+      67,
+      91,
+      1,
+      45,
+      7,
+      "INT"
+    ],
+    [
+      68,
+      91,
+      2,
+      45,
+      8,
+      "INT"
+    ],
+    [
+      69,
+      92,
+      0,
+      91,
+      0,
+      "IMAGE"
+    ],
+    [
+      72,
+      75,
+      0,
+      77,
+      1,
+      "STRING"
+    ],
+    [
+      74,
+      90,
+      0,
+      45,
+      3,
+      "LATENT"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 2.8966437973670223,
+      "offset": [
+        -1941.6229959677084,
+        -423.27330153844696
+      ]
+    },
+    "ue_links": [],
+    "VHS_latentpreview": true,
+    "VHS_latentpreviewrate": 0,
+    "node_versions": {
+      "ComfyUI-HunyuanVideoWrapper": "2997d6510ea134a1cdc78d4919fb1d09a2ec8a7d",
+      "ComfyUI-VideoHelperSuite": "c36626c6028faca912eafcedbc71f1d342fb4d2a",
+      "ComfyUI-KJNodes": "095c8d4b526ba3c1f12fd9dd1d7f3540c6a11358",
+      "comfy-core": "0.3.14"
+    },
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
