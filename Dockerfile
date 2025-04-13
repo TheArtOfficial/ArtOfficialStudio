@@ -136,6 +136,7 @@ RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/checkpoints -o sd_xl_base_1.
 # Native Models
 # Download Wan2.1 I2V model and related files
 RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o wan2_1_i2v.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors && \
+    aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o Wan2_1_I2V_14B_720P_fp8_e4m3fn.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors && \
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/clip_vision -o clip_vision_h.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors && \
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/loras -o 360_lora.safetensors https://huggingface.co/Remade-AI/Rotate/resolve/main/rotate_20_epochs.safetensors && \
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/text_encoders -o umt5_xxl_fp16.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors
@@ -145,18 +146,10 @@ RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o wan2_1_f
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o wan2_1_fun_14b_control.safetensors https://huggingface.co/alibaba-pai/Wan2.1-Fun-14B-Control/resolve/main/diffusion_pytorch_model.safetensors
 
 #Wrapper Files
-# Download Wan2.1 FP8 models
-RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o wan2_1_i2v_fp8.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp8.safetensors && \
-    aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/text_encoders -o umt5_xxl_fp8.safetensors https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8.safetensors
-
-# Download VACE models
-RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o vace_i2v.safetensors https://huggingface.co/Comfy-Org/VACE_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/vace_i2v_480p_14B_fp16.safetensors
-
-# Download SkyReels A2 models
-RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o skyreels_a2.safetensors https://huggingface.co/Comfy-Org/SkyReels_A2_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/skyreels_a2_480p_14B_fp16.safetensors
-
-# Download RecamMaster models
-RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o recammaster.safetensors https://huggingface.co/Comfy-Org/RecamMaster_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/recammaster_480p_14B_fp16.safetensors
+# Download VACE, Skyreels, and Recam models
+RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o Wan2_1_VACE_1_3B_preview_bf16.safetensors https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VACE_1_3B_preview_bf16.safetensors && \
+    aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o Wan2_1_SkyreelsA2_fp8_e4m3fn.safetensors https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_SkyreelsA2_fp8_e4m3fn.safetensors && \
+    aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o Wan2_1_kwai_recammaster_1_3B_step20000_bf16.safetensors https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_kwai_recammaster_1_3B_step20000_bf16.safetensors
 
 # Download HunyuanVideo model files
 RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/clip_vision -o llava_llama3_vision.safetensors https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors && \
