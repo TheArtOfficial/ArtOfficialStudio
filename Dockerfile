@@ -5,6 +5,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV FLUXGYM_PORT=7860
 ENV COMFYUI_PORT=8188
+ENV FLUX_DOWN_PORT=5000
 
 RUN apt update && apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
@@ -17,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     git \
     aria2 \
     curl \
+    python3.12-dev \
+    build-essential \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create workspace directory
@@ -33,6 +37,83 @@ RUN python3.12 -m venv /workspace/comfyui_venv && \
     git clone https://github.com/comfyanonymous/ComfyUI.git && \
     cd ComfyUI && \
     /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install ComfyUI Manager
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
+    cd ComfyUI-Manager && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install KJNodes
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-KJNodes.git && \
+    cd ComfyUI-KJNodes && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Crystools
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/crystian/ComfyUI-Crystools.git && \
+    cd ComfyUI-Crystools && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Video Helper Suite
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
+    cd ComfyUI-VideoHelperSuite && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Segment Anything 2
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-Segment-Anything-2.git && \
+    cd ComfyUI-Segment-Anything-2
+
+# Install Florence2
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-Florence2.git && \
+    cd ComfyUI-Florence2 && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install WanVideoWrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
+    cd ComfyUI-WanVideoWrapper && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install HunyuanVideoWrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-HunyuanVideoWrapper.git && \
+    cd ComfyUI-HunyuanVideoWrapper && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Easy-Use Nodes
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
+    cd ComfyUI-Easy-Use && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Impact Pack
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git && \
+    cd ComfyUI-Impact-Pack && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install LatentSync Wrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git && \
+    cd ComfyUI-LatentSyncWrapper && \
+    /workspace/comfyui_venv/bin/pip install -r requirements.txt
+
+# Clone RunPod repo and move workflows
+RUN git clone https://github.com/TheArtOfficial/RunPod.git && \
+    rm -rf /workspace/ComfyUI/user/default/workflows && \
+    mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
+    mkdir -p /workspace/flux_model_downloader/templates && \
+    mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
+    chmod +x /workspace/flux_model_downloader/download_models.sh && \
+    rm -rf /workspace/RunPod
+
+# Set up model downloader
+RUN python3.12 -m pip install flask gunicorn gevent
 
 # Download models
 RUN mkdir -p /workspace/ComfyUI/models/diffusion_models && \
@@ -54,12 +135,11 @@ RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models -o wan2_1_i
 # Create startup script
 RUN echo '#!/bin/bash\n\
 cd /workspace/fluxgym && /workspace/fluxgym_venv/bin/python app.py --port $FLUXGYM_PORT &\n\
-cd /workspace/ComfyUI && /workspace/comfyui_venv/bin/python main.py --port $COMFYUI_PORT\n\
-' > /workspace/start.sh && \
-    chmod +x /workspace/start.sh
+cd /workspace/ComfyUI && /workspace/comfyui_venv/bin/python main.py --port $COMFYUI_PORT &\n\
+cd /workspace/flux_model_downloader && python3.12 app.py --port $FLUX_DOWN_PORT' > /workspace/start.sh && chmod +x /workspace/start.sh
 
 # Expose ports
-EXPOSE $FLUXGYM_PORT $COMFYUI_PORT
+EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT
 
 # Set the entrypoint
 ENTRYPOINT ["/workspace/start.sh"] 

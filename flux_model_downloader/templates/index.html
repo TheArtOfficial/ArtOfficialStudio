@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flux Model Downloader</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        #status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status-idle {
+            background-color: #f0f0f0;
+        }
+        .status-downloading {
+            background-color: #fff3cd;
+        }
+        .status-completed {
+            background-color: #d4edda;
+        }
+        .status-error {
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Flux Model Downloader</h1>
+        <div class="form-group">
+            <label for="api_key">Enter your Flux API Key:</label>
+            <input type="text" id="api_key" name="api_key" placeholder="Your Flux API Key">
+        </div>
+        <button id="downloadBtn" onclick="startDownload()">Download Models</button>
+        <div id="status" class="status-idle">
+            Ready to download
+        </div>
+    </div>
+
+    <script>
+        let downloadInProgress = false;
+
+        function updateStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('status');
+                    statusDiv.className = `status-${data.status}`;
+                    statusDiv.textContent = data.message;
+
+                    if (data.status === 'completed' || data.status === 'error') {
+                        downloadInProgress = false;
+                        document.getElementById('downloadBtn').disabled = false;
+                    } else if (data.status === 'downloading') {
+                        setTimeout(updateStatus, 1000);
+                    }
+                });
+        }
+
+        function startDownload() {
+            if (downloadInProgress) return;
+
+            const apiKey = document.getElementById('api_key').value;
+            if (!apiKey) {
+                alert('Please enter your API key');
+                return;
+            }
+
+            downloadInProgress = true;
+            document.getElementById('downloadBtn').disabled = true;
+
+            fetch('/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `api_key=${encodeURIComponent(apiKey)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                updateStatus();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                downloadInProgress = false;
+                document.getElementById('downloadBtn').disabled = false;
+            });
+        }
+    </script>
+</body>
+</html> 
