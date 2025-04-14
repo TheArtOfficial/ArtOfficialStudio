@@ -6,6 +6,7 @@ ENV PYTHONUNBUFFERED=1
 ENV FLUXGYM_PORT=7000
 ENV COMFYUI_PORT=8188
 ENV FLUX_DOWN_PORT=5000
+ENV CIVITAI_DOWN_PORT=5001
 ENV DIFFUSION_PIPE_UI_PORT=7860
 ENV TENSORBOARD_PORT=6006
 ENV FLUX_SCRIPT_PATH=/workspace/flux_model_downloader/download_models.sh
@@ -143,10 +144,27 @@ RUN cd /workspace/ComfyUI/custom_nodes && \
     cd ComfyUI-LatentSyncWrapper && \
     /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 
+    # Clone RunPod repo and move workflows
+    RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/RunPod.git && \
+    rm -rf /workspace/ComfyUI/user/default/workflows && \
+    mkdir -p /workspace/ComfyUI/user/default && \
+    mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
+    mkdir -p /workspace/flux_model_downloader/templates && \
+    mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
+    chmod +x $FLUX_SCRIPT_PATH && \
+    rm -rf /workspace/RunPod
+
 # Set up model downloader
 RUN cd /workspace/flux_model_downloader && \
     python3.12 -m venv flask_venv && \
     ./flask_venv/bin/pip install flask gunicorn gevent
+
+# Set up CivitAI model downloader
+RUN cd /workspace && \
+    mkdir -p civitai_model_downloader/templates && \
+    cd civitai_model_downloader && \
+    python3.12 -m venv civitai_venv && \
+    ./civitai_venv/bin/pip install flask gunicorn gevent
 
 # Create and set up FluxGym virtual environment
 RUN cd /workspace && \
@@ -164,28 +182,19 @@ RUN cd /workspace && \
     ./diffusion_venv/bin/python -m pip install --upgrade pip && \
     ./diffusion_venv/bin/pip install -r requirements.txt
 
-    # Clone RunPod repo and move workflows
-RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/RunPod.git && \
-    rm -rf /workspace/ComfyUI/user/default/workflows && \
-    mkdir -p /workspace/ComfyUI/user/default && \
-    mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
-    mkdir -p /workspace/flux_model_downloader/templates && \
-    mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
-    chmod +x $FLUX_SCRIPT_PATH && \
-    rm -rf /workspace/RunPod
-
 # Create startup script
 RUN echo '#!/bin/bash\n\
 cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py --port $FLUXGYM_PORT &\n\
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --port $COMFYUI_PORT &\n\
 cd /workspace/flux_model_downloader && ./flask_venv/bin/python app.py --port $FLUX_DOWN_PORT &\n\
+cd /workspace/civitai_model_downloader && ./civitai_venv/bin/python app.py --port $CIVITAI_DOWN_PORT &\n\
 cd /workspace/diffusion-pipe-ui && ./diffusion_venv/bin/python gradio_interface.py' > /workspace/start.sh && chmod +x /workspace/start.sh
 
 RUN /workspace/ComfyUI/comfyui_venv/bin/pip uninstall -y onnxruntime && \
     /workspace/ComfyUI/comfyui_venv/bin/pip install onnxruntime-gpu="1.19" sageattention
 
 # Expose ports
-EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT $DIFFUSION_PIPE_UI_PORT $TENSORBOARD_PORT
+EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT $CIVITAI_DOWN_PORT $DIFFUSION_PIPE_UI_PORT $TENSORBOARD_PORT
 
 # Set the entrypoint
 ENTRYPOINT ["/workspace/start.sh"] 
