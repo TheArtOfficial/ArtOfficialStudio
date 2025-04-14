@@ -3,9 +3,11 @@ FROM nvidia/cuda:12.6.0-runtime-ubuntu22.04
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
-ENV FLUXGYM_PORT=7860
+ENV FLUXGYM_PORT=7000
 ENV COMFYUI_PORT=8188
 ENV FLUX_DOWN_PORT=5000
+ENV DIFFUSION_PIPE_UI_PORT=7860
+ENV TENSORBOARD_PORT=6006
 ENV FLUX_SCRIPT_PATH=/workspace/flux_model_downloader/download_models.sh
 ENV FLUX_MODELS_PATH=/workspace/ComfyUI/models/diffusion_models
 
@@ -17,7 +19,7 @@ RUN apt update && apt install -y software-properties-common
 RUN add-apt-repository ppa:deadsnakes/ppa
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get install -y \
     python3.12 \
     python3.12-venv \
     git \
@@ -30,97 +32,13 @@ RUN apt-get update && apt-get install -y \
 # Create workspace directory
 WORKDIR /workspace
 
-# Create and set up FluxGym virtual environment
-RUN python3.12 -m venv /workspace/fluxgym_venv && \
-    git clone https://github.com/cocktailpeanut/fluxgym.git && \
-    cd fluxgym && \
-    /workspace/fluxgym_venv/bin/pip install -r requirements.txt
-
 # Create and set up ComfyUI virtual environment
-RUN python3.12 -m venv /workspace/comfyui_venv && \
-    /workspace/comfyui_venv/bin/pip install --upgrade pip wheel setuptools && \
+RUN cd /workspace && \
     git clone https://github.com/comfyanonymous/ComfyUI.git && \
     cd ComfyUI && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install ComfyUI Manager
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
-    cd ComfyUI-Manager && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install KJNodes
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/kijai/ComfyUI-KJNodes.git && \
-    cd ComfyUI-KJNodes && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install Crystools
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/crystian/ComfyUI-Crystools.git && \
-    cd ComfyUI-Crystools && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install Video Helper Suite
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
-    cd ComfyUI-VideoHelperSuite && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install Segment Anything 2
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/kijai/ComfyUI-Segment-Anything-2.git && \
-    cd ComfyUI-Segment-Anything-2
-
-# Install Florence2
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/kijai/ComfyUI-Florence2.git && \
-    cd ComfyUI-Florence2 && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install WanVideoWrapper
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
-    cd ComfyUI-WanVideoWrapper && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install HunyuanVideoWrapper
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/kijai/ComfyUI-HunyuanVideoWrapper.git && \
-    cd ComfyUI-HunyuanVideoWrapper && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install Easy-Use Nodes
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
-    cd ComfyUI-Easy-Use && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install Impact Pack
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git && \
-    cd ComfyUI-Impact-Pack && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Install LatentSync Wrapper
-RUN cd /workspace/ComfyUI/custom_nodes && \
-    git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git && \
-    cd ComfyUI-LatentSyncWrapper && \
-    /workspace/comfyui_venv/bin/pip install -r requirements.txt
-
-# Clone RunPod repo and move workflows
-RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/RunPod.git && \
-    rm -rf /workspace/ComfyUI/user/default/workflows && \
-    mkdir -p /workspace/ComfyUI/user/default && \
-    mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
-    mkdir -p /workspace/flux_model_downloader/templates && \
-    mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
-    chmod +x $FLUX_SCRIPT_PATH && \
-    rm -rf /workspace/RunPod
-
-# Set up model downloader
-RUN python3.12 -m venv /workspace/flask_venv && \
-    /workspace/flask_venv/bin/pip install flask gunicorn gevent
+    python3.12 -m venv comfyui_venv && \
+    ./comfyui_venv/bin/python -m pip install --upgrade pip && \
+    ./comfyui_venv/bin/pip install -r requirements.txt
 
 # Download models
 RUN mkdir -p /workspace/ComfyUI/models/diffusion_models && \
@@ -160,14 +78,114 @@ RUN aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/clip_vision -o llava_llama3_
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/text_encoders -o llava_llama3_fp8_scaled.safetensors https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/llava_llama3_fp8_scaled.safetensors && \
     aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/text_encoders -o clip_l.safetensors https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/text_encoders/clip_l.safetensors
 
+# Install ComfyUI Manager
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git && \
+    cd ComfyUI-Manager && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install KJNodes
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-KJNodes.git && \
+    cd ComfyUI-KJNodes && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Crystools
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/crystian/ComfyUI-Crystools.git && \
+    cd ComfyUI-Crystools && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Video Helper Suite
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
+    cd ComfyUI-VideoHelperSuite && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Segment Anything 2
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-Segment-Anything-2.git && \
+    cd ComfyUI-Segment-Anything-2
+
+# Install Florence2
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-Florence2.git && \
+    cd ComfyUI-Florence2 && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install WanVideoWrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git && \
+    cd ComfyUI-WanVideoWrapper && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install HunyuanVideoWrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/kijai/ComfyUI-HunyuanVideoWrapper.git && \
+    cd ComfyUI-HunyuanVideoWrapper && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Easy-Use Nodes
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
+    cd ComfyUI-Easy-Use && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install Impact Pack
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git && \
+    cd ComfyUI-Impact-Pack && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Install LatentSync Wrapper
+RUN cd /workspace/ComfyUI/custom_nodes && \
+    git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git && \
+    cd ComfyUI-LatentSyncWrapper && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+
+# Set up model downloader
+RUN cd /workspace/flux_model_downloader && \
+    python3.12 -m venv flask_venv && \
+    ./flask_venv/bin/pip install flask gunicorn gevent
+
+# Create and set up FluxGym virtual environment
+RUN cd /workspace && \
+    git clone https://github.com/cocktailpeanut/fluxgym.git && \
+    cd fluxgym && \
+    python3.12 -m venv fluxgym_venv && \
+    ./fluxgym_venv/bin/python -m pip install --upgrade pip && \
+    ./fluxgym_venv/bin/pip install -r requirements.txt
+
+# Create and set up diffusion-pipe-ui
+RUN cd /workspace && \
+    git clone https://github.com/alisson-anjos/diffusion-pipe-ui.git && \
+    cd diffusion-pipe-ui && \
+    python3.12 -m venv diffusion_venv && \
+    ./diffusion_venv/bin/python -m pip install --upgrade pip && \
+    ./diffusion_venv/bin/pip install -r requirements.txt
+
+    # Clone RunPod repo and move workflows
+RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/RunPod.git && \
+    rm -rf /workspace/ComfyUI/user/default/workflows && \
+    mkdir -p /workspace/ComfyUI/user/default && \
+    mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
+    mkdir -p /workspace/flux_model_downloader/templates && \
+    mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
+    chmod +x $FLUX_SCRIPT_PATH && \
+    rm -rf /workspace/RunPod
+
 # Create startup script
 RUN echo '#!/bin/bash\n\
-cd /workspace/fluxgym && /workspace/fluxgym_venv/bin/python app.py --port $FLUXGYM_PORT &\n\
-cd /workspace/ComfyUI && /workspace/comfyui_venv/bin/python main.py --port $COMFYUI_PORT &\n\
-cd /workspace/flux_model_downloader && /workspace/flask_venv/bin/python app.py --port $FLUX_DOWN_PORT' > /workspace/start.sh && chmod +x /workspace/start.sh
+cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py --port $FLUXGYM_PORT &\n\
+cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --port $COMFYUI_PORT &\n\
+cd /workspace/flux_model_downloader && ./flask_venv/bin/python app.py --port $FLUX_DOWN_PORT &\n\
+cd /workspace/diffusion-pipe-ui && ./diffusion_venv/bin/python gradio_interface.py' > /workspace/start.sh && chmod +x /workspace/start.sh
+
+RUN /workspace/ComfyUI/comfyui_venv/bin/pip uninstall -y onnxruntime && \
+    /workspace/ComfyUI/comfyui_venv/bin/pip install onnxruntime-gpu="1.19" sageattention
 
 # Expose ports
-EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT
+EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT $DIFFUSION_PIPE_UI_PORT $TENSORBOARD_PORT
 
 # Set the entrypoint
 ENTRYPOINT ["/workspace/start.sh"] 
