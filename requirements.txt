@@ -1,0 +1,7 @@
+# Flask dependencies
+Flask>=2.3.0
+Werkzeug>=2.3.0
+Jinja2>=3.1.0
+itsdangerous>=2.1.0
+click>=8.1.0
+gunicorn>=20.1.0 

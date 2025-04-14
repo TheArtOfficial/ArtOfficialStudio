@@ -6,8 +6,8 @@ ENV PYTHONUNBUFFERED=1
 ENV FLUXGYM_PORT=7860
 ENV COMFYUI_PORT=8188
 ENV FLUX_DOWN_PORT=5000
-ENV PYTHONPATH=/usr/lib/python3:/usr/lib/python3/lib-dynload:/usr/local/lib/python3/dist-packages:/usr/lib/python3/dist-packages
-ENV PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/sbin
+ENV FLUX_SCRIPT_PATH=/workspace/flux_model_downloader/download_models.sh
+ENV FLUX_MODELS_PATH=/workspace/ComfyUI/models/diffusion_models
 
 # Add GitHub token build argument
 ARG GITHUB_TOKEN
@@ -115,7 +115,7 @@ RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/RunPod.git && \
     mv /workspace/RunPod/workflows/* /workspace/ComfyUI/user/default/ && \
     mkdir -p /workspace/flux_model_downloader/templates && \
     mv /workspace/RunPod/flux_model_downloader/* /workspace/flux_model_downloader/ && \
-    chmod +x /workspace/flux_model_downloader/download_models.sh && \
+    chmod +x $FLUX_SCRIPT_PATH && \
     rm -rf /workspace/RunPod
 
 # Set up model downloader

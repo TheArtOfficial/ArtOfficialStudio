@@ -56,6 +56,79 @@
         button:hover {
             background-color: #0056b3;
         }
+        .model-links {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .status-box {
+            display: none;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        .status-log {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .progress-container {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .download-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+        }
+        .download-stats {
+            display: flex;
+            gap: 20px;
+        }
+        .stop-button {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .stop-button:hover {
+            background-color: #c82333;
+        }
+        .stop-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -70,26 +143,168 @@
 
         <div class="step">
             <span class="step-number">2.</span>
-            Visit the <a href="https://huggingface.co/flux-dev" target="_blank">Flux model page</a>
+            Visit and accept the agreements for both Flux models:
+            <div class="model-links">
+                <a href="https://huggingface.co/black-forest-labs/FLUX.1-dev" target="_blank">FLUX.1 Base Model</a>
+                <a href="https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev" target="_blank">FLUX.1 Fill Model</a>
+            </div>
         </div>
 
         <div class="step">
             <span class="step-number">3.</span>
-            Accept the model agreement at the top of the page
-        </div>
-
-        <div class="step">
-            <span class="step-number">4.</span>
             Go to your <a href="https://huggingface.co/settings/tokens" target="_blank">Access Tokens settings</a> and create a new token with read access
         </div>
 
         <div class="form-group">
             <p>Enter your Hugging Face Access Token below:</p>
-            <form action="/download" method="post">
+            <form id="download-form" action="/download" method="post">
                 <input type="text" name="token" placeholder="Enter your Hugging Face Access Token" required>
                 <button type="submit">Download Models</button>
             </form>
         </div>
+
+        <div id="status-box" class="status-box">
+            <div id="status-log" class="status-log"></div>
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                </div>
+                <div id="download-info" class="download-info">
+                    <div class="download-size">
+                        <span id="downloaded-size">0B</span> / <span id="total-size">0B</span>
+                    </div>
+                    <div class="download-stats">
+                        <span id="download-speed">0B/s</span>
+                        <span id="download-eta">ETA: Unknown</span>
+                    </div>
+                </div>
+                <button id="stop-button" class="stop-button" style="display: none;">Stop Download</button>
+            </div>
+        </div>
     </div>
+
+    <script>
+        let isDownloading = false;
+        let currentModel = '';
+        let lastMessage = '';
+
+        document.getElementById('download-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Show status box and stop button
+            document.getElementById('status-box').style.display = 'block';
+            document.getElementById('stop-button').style.display = 'block';
+            document.getElementById('status-log').textContent = '';
+            lastMessage = '';
+            isDownloading = true;
+            
+            // Submit form data
+            fetch('/download', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                // Start polling for status
+                updateStatus();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('status-log').textContent = 'Error starting download';
+                isDownloading = false;
+                document.getElementById('stop-button').style.display = 'none';
+            });
+        });
+
+        document.getElementById('stop-button').addEventListener('click', function() {
+            if (isDownloading) {
+                fetch('/stop', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to stop download');
+                    }
+                    isDownloading = false;
+                    document.getElementById('status-log').textContent += '\nDownload stopped by user';
+                    document.getElementById('stop-button').style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('status-log').textContent += '\nError stopping download';
+                });
+            }
+        });
+
+        function updateStatus() {
+            if (!isDownloading) return;
+
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusLog = document.getElementById('status-log');
+                    const progressBar = document.getElementById('progress-bar-fill');
+                    const downloadedSize = document.getElementById('downloaded-size');
+                    const totalSize = document.getElementById('total-size');
+                    const downloadSpeed = document.getElementById('download-speed');
+                    const downloadEta = document.getElementById('download-eta');
+                    
+                    // Update status log
+                    if (data.message && data.message !== lastMessage) {
+                        if (data.message.includes('Downloading')) {
+                            const modelName = data.message.split('Downloading ')[1].split('...')[0];
+                            if (modelName !== currentModel) {
+                                currentModel = modelName;
+                                statusLog.textContent += `Downloading ${modelName}...\n`;
+                                lastMessage = data.message;
+                            }
+                        } else if (data.message.includes('Download Complete!')) {
+                            statusLog.textContent += 'Download Complete!\n';
+                            currentModel = '';
+                            lastMessage = data.message;
+                        } else if (data.message.includes('Starting download...')) {
+                            statusLog.textContent += 'Starting download...\n';
+                            lastMessage = data.message;
+                        } else if (data.message.includes('Initializing download...')) {
+                            statusLog.textContent += 'Initializing download...\n';
+                            lastMessage = data.message;
+                        }
+                        // Scroll to bottom
+                        statusLog.scrollTop = statusLog.scrollHeight;
+                    }
+                    
+                    // Update progress bar
+                    progressBar.style.width = data.progress + '%';
+                    
+                    // Update download info
+                    downloadedSize.textContent = data.downloaded;
+                    totalSize.textContent = data.total;
+                    downloadSpeed.textContent = data.speed;
+                    downloadEta.textContent = `ETA: ${data.eta}`;
+                    
+                    // Continue polling if not completed or error
+                    if (data.status !== 'completed' && data.status !== 'error' && isDownloading) {
+                        setTimeout(updateStatus, 1000);
+                    } else {
+                        isDownloading = false;
+                        document.getElementById('stop-button').style.display = 'none';
+                        // If completed or error, wait 5 seconds then hide the status box
+                        setTimeout(() => {
+                            document.getElementById('status-box').style.display = 'none';
+                        }, 5000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching status:', error);
+                    // Continue polling even on error
+                    if (isDownloading) {
+                        setTimeout(updateStatus, 1000);
+                    }
+                });
+        }
+    </script>
 </body>
 </html> 
