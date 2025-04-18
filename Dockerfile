@@ -1,8 +1,6 @@
 FROM nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
 ENV FLUXGYM_PORT=7000
 ENV COMFYUI_PORT=8188
 ENV FLUX_DOWN_PORT=5000
@@ -10,39 +8,174 @@ ENV CIVITAI_DOWN_PORT=5001
 ENV DIFFUSION_PIPE_UI_PORT=7860
 ENV TENSORBOARD_PORT=6006
 ENV JUPYTER_PORT=8888
-ENV FLUX_SCRIPT_PATH=/workspace/flux_model_downloader/download_models.sh
-ENV FLUX_MODELS_PATH=/workspace/ComfyUI/models/diffusion_models
-ENV SCRIPTS_DIR=/workspace/scripts
 
-# Add GitHub token build argument
-ARG GITHUB_TOKEN
-ENV GITHUB_TOKEN=$GITHUB_TOKEN
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Install system dependencies
-RUN apt update && apt install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt-get install -y \
-    python3.12 \
-    python3.12-venv \
-    python3.12-dev \
-    git \
-    aria2 \
+ENV SHELL=/bin/bash
+ENV PYTHONUNBUFFERED=True
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Set the base release version
+ARG BASE_RELEASE_VERSION
+ENV BASE_RELEASE_VERSION=${BASE_RELEASE_VERSION}
+
+# Override the default huggingface cache directory.
+ENV HF_HOME="/runpod-volume/.cache/huggingface/"
+ENV HF_DATASETS_CACHE="/runpod-volume/.cache/huggingface/datasets/"
+ENV DEFAULT_HF_METRICS_CACHE="/runpod-volume/.cache/huggingface/metrics/"
+ENV DEFAULT_HF_MODULES_CACHE="/runpod-volume/.cache/huggingface/modules/"
+ENV HUGGINGFACE_HUB_CACHE="/runpod-volume/.cache/huggingface/hub/"
+ENV HUGGINGFACE_ASSETS_CACHE="/runpod-volume/.cache/huggingface/assets/"
+
+# Faster transfer of models from the hub to the container
+ENV HF_HUB_ENABLE_HF_TRANSFER="1"
+
+# Shared python package cache
+ENV VIRTUALENV_OVERRIDE_APP_DATA="/runpod-volume/.cache/virtualenv/"
+ENV PIP_CACHE_DIR="/runpod-volume/.cache/pip/"
+ENV UV_CACHE_DIR="/runpod-volume/.cache/uv/"
+
+# Set Default Python Version
+ENV PYTHON_VERSION="3.12"
+
+WORKDIR /
+
+# Update and upgrade
+RUN apt-get update --yes
+
+# Install basic utilities
+RUN apt install --yes --no-install-recommends \
+    bash \
+    ca-certificates \
     curl \
+    file \
+    git \
+    inotify-tools \
+    jq \
+    libgl1 \
+    lsof \
+    vim \
+    nano \
+    tmux \
+    nginx \
+    openssh-server \
+    procps \
+    rsync \
+    sudo \
+    software-properties-common \
+    unzip \
+    wget \
+    zip 
+
+# Install build tools and development packages
+RUN apt install --yes --no-install-recommends \
     build-essential \
+    make \
+    cmake \
+    gfortran \
+    libblas-dev \
+    liblapack-dev
+
+# Install image and video processing libraries
+RUN apt install --yes --no-install-recommends \
+    ffmpeg \
+    libavcodec-dev \
+    libavfilter-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libpostproc-dev \
+    libswresample-dev \
+    libswscale-dev \
+    libtiff-dev \
+    libv4l-dev \
+    libx264-dev \
+    libxext6 \
+    libxrender-dev \
+    libxvidcore-dev
+
+# Install deep learning dependencies and miscellaneous
+RUN apt install --yes --no-install-recommends \
+    libatlas-base-dev \
     libffi-dev \
-    && rm -rf /var/lib/apt/lists/*
+    libhdf5-serial-dev \
+    libsm6 \
+    libssl-dev
 
-# Install JupyterLab and extensions
-RUN python3.12 -m ensurepip --upgrade && \
-    python3.12 -m pip install jupyterlab ipywidgets jupyter-archive jupyter_contrib_nbextensions nodejs
+# Install file systems and storage
+RUN apt install --yes --no-install-recommends \
+    cifs-utils \
+    nfs-common \
+    zstd
 
-# Create workspace directory and clone repository
-WORKDIR /workspace
-RUN git clone https://${GITHUB_TOKEN}@github.com/TheArtOfficial/runpod.git . && \
-    chmod +x /workspace/scripts/start.sh
+# Add the Python PPA
+RUN add-apt-repository ppa:deadsnakes/ppa
 
+# Install Python 3.12-3.13 (distutils is included in dev package for newer versions)
+RUN apt install --yes --no-install-recommends \
+    python3.12-dev \
+    python3.12-venv 
+
+# Cleanup
+RUN apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set locale
+RUN echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+
+# Install pip
+RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3.12 get-pip.py && \
+    rm get-pip.py
+
+# Get the latest pip for all python versions
+RUN python3.12 -m pip install --upgrade pip
+
+# Install virtualenv
+RUN python3.12 -m pip install virtualenv
+
+# Install Jupyter and related packages (always with Python 3.10)
+RUN python3.12 -m pip install --upgrade --no-cache-dir \
+    jupyterlab \
+    ipywidgets \
+    jupyter-archive \
+    notebook \
+    jupyter_contrib_nbextensions \
+    nodejs
+
+# Install pip drop-in replacement uv (https://github.com/astral-sh/uv)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
+    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /etc/profile.d/uv.sh && \
+    chmod +x /etc/profile.d/uv.sh && \
+    export PATH="$HOME/.local/bin:$PATH" && \
+    uv --version
+
+# Install additional tools that were previously installed via Homebrew
+# Install pyenv via git
+RUN git clone https://github.com/pyenv/pyenv.git /opt/pyenv && \
+    echo 'export PYENV_ROOT="/opt/pyenv"' >> /etc/profile.d/pyenv.sh && \
+    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> /etc/profile.d/pyenv.sh && \
+    echo 'if command -v pyenv 1>/dev/null 2>&1; then eval "$(pyenv init -)"; fi' >> /etc/profile.d/pyenv.sh && \
+    chmod +x /etc/profile.d/pyenv.sh
+
+# Install filebrowser
+RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
+
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Create workspace and clone repository
+RUN mkdir -p /workspace
 # Expose ports
 EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT $CIVITAI_DOWN_PORT $DIFFUSION_PIPE_UI_PORT $TENSORBOARD_PORT $JUPYTER_PORT
 
+COPY --chmod=755 start.sh /start.sh
+COPY --chmod=755 post_start.sh /post_start.sh
+COPY --chmod=755 workflows /workspace/workflows
+COPY --chmod=755 civitai_model_downloader /workspace/civitai_model_downloader
+COPY --chmod=755 flux_model_downloader /workspace/flux_model_downloader
+COPY --chmod=755 scripts /workspace/scripts
+
 # Set the entrypoint
-ENTRYPOINT ["/workspace/scripts/start.sh"] 
+ENTRYPOINT ["/start.sh"] 
