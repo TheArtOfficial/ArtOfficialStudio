@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Control Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .tab-content {
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 0.25rem 0.25rem;
+        }
+        .nav-tabs {
+            margin-bottom: 0;
+        }
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .status-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">Model Control Panel</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="lora-tab" data-bs-toggle="tab" data-bs-target="#lora" type="button" role="tab">Lora Training</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button" role="tab">Model Downloads</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="flux-tab" data-bs-toggle="tab" data-bs-target="#flux" type="button" role="tab">Flux Downloader</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="civitai-tab" data-bs-toggle="tab" data-bs-target="#civitai" type="button" role="tab">CivitAI Downloader</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="huggingface-tab" data-bs-toggle="tab" data-bs-target="#huggingface" type="button" role="tab">HuggingFace</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Lora Training Tab -->
+            <div class="tab-pane fade show active" id="lora" role="tabpanel">
+                <h3>Install Lora Training Tools</h3>
+                <form id="loraForm" method="POST" action="/install_training_tool">
+                    {{ lora_form.csrf_token }}
+                    <div class="mb-3">
+                        {{ lora_form.tool.label(class="form-label") }}
+                        {{ lora_form.tool(class="form-select") }}
+                    </div>
+                    <div class="mb-3">
+                        <p class="text-muted">
+                            <strong>Flux Gym:</strong> For training Flux Loras<br>
+                            <strong>Diffusion Pipe:</strong> For training Wan, Hidream, Hunyuan, and LTX Loras
+                        </p>
+                    </div>
+                    {{ lora_form.submit(class="btn btn-primary") }}
+                </form>
+                <div id="loraStatus" class="status-message"></div>
+            </div>
+
+            <!-- Model Downloads Tab -->
+            <div class="tab-pane fade" id="models" role="tabpanel">
+                <h3>Download Models</h3>
+                <div class="list-group">
+                    {% for script in download_scripts %}
+                    <button class="list-group-item list-group-item-action download-script" data-script="{{ script }}">
+                        {{ script|title }} Models
+                    </button>
+                    {% endfor %}
+                </div>
+                <div id="modelStatus" class="status-message"></div>
+            </div>
+
+            <!-- Flux Downloader Tab -->
+            <div class="tab-pane fade" id="flux" role="tabpanel">
+                <h3>Flux Model Downloader</h3>
+                <iframe src="http://localhost:5000" style="width: 100%; height: 600px; border: none;"></iframe>
+            </div>
+
+            <!-- CivitAI Downloader Tab -->
+            <div class="tab-pane fade" id="civitai" role="tabpanel">
+                <h3>CivitAI Model Downloader</h3>
+                <iframe src="http://localhost:5001" style="width: 100%; height: 600px; border: none;"></iframe>
+            </div>
+
+            <!-- HuggingFace Tab -->
+            <div class="tab-pane fade" id="huggingface" role="tabpanel">
+                <h3>Download HuggingFace Models</h3>
+                <form id="hfForm" method="POST" action="/download_huggingface">
+                    {{ hf_form.csrf_token }}
+                    <div class="mb-3">
+                        {{ hf_form.model_url.label(class="form-label") }}
+                        {{ hf_form.model_url(class="form-control", placeholder="https://huggingface.co/model-name") }}
+                    </div>
+                    {{ hf_form.submit(class="btn btn-primary") }}
+                </form>
+                <div id="hfStatus" class="status-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Handle Lora Training Form
+        document.getElementById('loraForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/install_training_tool', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('loraStatus');
+                statusDiv.className = `status-message status-${data.status}`;
+                statusDiv.textContent = data.message;
+            });
+        });
+
+        // Handle Model Download Scripts
+        document.querySelectorAll('.download-script').forEach(button => {
+            button.addEventListener('click', function() {
+                const scriptName = this.dataset.script;
+                fetch('/run_download_script', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `script_name=${scriptName}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('modelStatus');
+                    statusDiv.className = `status-message status-${data.status}`;
+                    statusDiv.textContent = data.message;
+                });
+            });
+        });
+
+        // Handle HuggingFace Form
+        document.getElementById('hfForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/download_huggingface', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('hfStatus');
+                statusDiv.className = `status-message status-${data.status}`;
+                statusDiv.textContent = data.message;
+            });
+        });
+    </script>
+</body>
+</html> 

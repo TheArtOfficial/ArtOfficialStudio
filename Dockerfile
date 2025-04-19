@@ -171,6 +171,7 @@ COPY --chmod=755 post_start.sh /post_start.sh
 COPY --chmod=755 workflows /workspace/workflows
 COPY --chmod=755 civitai_model_downloader /civitai_model_downloader
 COPY --chmod=755 flux_model_downloader /flux_model_downloader
+COPY --chmod=755 control_panel /control_panel
 COPY --chmod=755 scripts /scripts
 COPY --chmod=755 gradio_interface.py /gradio_interface.py
 
