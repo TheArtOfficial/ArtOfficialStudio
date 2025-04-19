@@ -25,3 +25,8 @@ aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/loras \
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/text_encoders \
     -o umt5_xxl_fp16.safetensors \
     https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors 
+
+# Download Wan2.1 VAE
+aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/vae \
+    -o wan_2.1_vae_native.safetensors \
+    https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors?download=true

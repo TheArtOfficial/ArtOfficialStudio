@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
 
 # Set environment variables
 ENV FLUXGYM_PORT=7000
@@ -65,7 +65,9 @@ RUN apt install --yes --no-install-recommends \
     software-properties-common \
     unzip \
     wget \
-    zip 
+    aria2 \
+    zip \
+    ninja-build
 
 # Install build tools and development packages
 RUN apt install --yes --no-install-recommends \
@@ -110,7 +112,7 @@ RUN apt install --yes --no-install-recommends \
     zstd
 
 # Add the Python PPA
-RUN add-apt-repository ppa:deadsnakes/ppa
+RUN add-apt-repository ppa:deadsnakes/ppa && apt update
 
 # Install Python 3.12-3.13 (distutils is included in dev package for newer versions)
 RUN apt install --yes --no-install-recommends \
@@ -132,9 +134,6 @@ RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
 
 # Get the latest pip for all python versions
 RUN python3.12 -m pip install --upgrade pip
-
-# Install virtualenv
-RUN python3.12 -m pip install virtualenv
 
 # Install Jupyter and related packages (always with Python 3.10)
 RUN python3.12 -m pip install --upgrade --no-cache-dir \
@@ -160,9 +159,6 @@ RUN git clone https://github.com/pyenv/pyenv.git /opt/pyenv && \
     echo 'if command -v pyenv 1>/dev/null 2>&1; then eval "$(pyenv init -)"; fi' >> /etc/profile.d/pyenv.sh && \
     chmod +x /etc/profile.d/pyenv.sh
 
-# Install filebrowser
-RUN curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash
-
 COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create workspace and clone repository
@@ -173,9 +169,10 @@ EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $FLUX_DOWN_PORT $CIVITAI_DOWN_PORT $DIFFUSION
 COPY --chmod=755 start.sh /start.sh
 COPY --chmod=755 post_start.sh /post_start.sh
 COPY --chmod=755 workflows /workspace/workflows
-COPY --chmod=755 civitai_model_downloader /workspace/civitai_model_downloader
-COPY --chmod=755 flux_model_downloader /workspace/flux_model_downloader
-COPY --chmod=755 scripts /workspace/scripts
+COPY --chmod=755 civitai_model_downloader /civitai_model_downloader
+COPY --chmod=755 flux_model_downloader /flux_model_downloader
+COPY --chmod=755 scripts /scripts
+COPY --chmod=755 gradio_interface.py /gradio_interface.py
 
 # Set the entrypoint
 ENTRYPOINT ["/start.sh"] 
