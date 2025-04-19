@@ -95,7 +95,7 @@ cd ComfyUI-LatentSyncWrapper
 cd ..
 
 # Fix onnxruntime for ComfyUI
-echo "Fixing onnxruntime for ComfyUI..."
+echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
 ./comfyui_venv/bin/pip uninstall -y onnxruntime -qq
 ./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19" -qq

@@ -245,7 +245,7 @@ def parse_script_header(script_path):
 @app.route('/')
 def index():
     # Get available download scripts
-    download_scripts = glob.glob('/scripts/download_*.sh')
+    download_scripts = glob.glob('/scripts/preset_model_scripts/download_*.sh')
     script_info = []
     for script in download_scripts:
         script_name = os.path.basename(script).replace('download_', '').replace('.sh', '')
