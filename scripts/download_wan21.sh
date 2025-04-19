@@ -1,4 +1,5 @@
 #!/bin/bash
+# Model: Wan 2.1 I2V Models
 
 echo "Downloading Wan2.1 I2V model and related files..."
 
@@ -9,7 +10,7 @@ aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models \
 
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models \
     -o Wan2_1_I2V_14B_720P_fp8_e4m3fn.safetensors \
-    https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_480p_14B_fp16.safetensors
+    https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_i2v_720p_14B_fp16.safetensors
 
 # Download CLIP vision model
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/clip_vision \

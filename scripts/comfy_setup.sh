@@ -98,7 +98,8 @@ cd ..
 echo "Fixing onnxruntime for ComfyUI..."
 cd /workspace/ComfyUI
 ./comfyui_venv/bin/pip uninstall -y onnxruntime -qq
-./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19" sageattention -qq
+./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19" -qq
+./comfyui_venv/bin/pip install https://huggingface.co/TheArtOfficialTrainer/cu128Torch128whls/resolve/main/sageattention-2.1.1-cp312-cp312-linux_x86_64.whl -qq
 
 # Start ComfyUI
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --listen --port 8188 --preview-method auto > comfy.log 2>&1 &

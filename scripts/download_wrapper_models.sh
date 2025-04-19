@@ -1,4 +1,5 @@
 #!/bin/bash
+# Model: VACE, Skyreels, and Recam Models
 
 echo "Downloading VACE, Skyreels, and Recam models..."
 

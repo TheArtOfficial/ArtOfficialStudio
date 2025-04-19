@@ -3,37 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Model Control Panel</title>
+    <title>AI Studio Control Panel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        .tab-content {
-            padding: 20px;
-            background-color: #fff;
-            border: 1px solid #dee2e6;
-            border-top: none;
-            border-radius: 0 0 0.25rem 0.25rem;
+        :root {
+            --primary-color: #60a5fa;  /* Light blue */
+            --secondary-color: #f472b6;  /* Pink */
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --hover-color: #f1f5f9;
+            --success-color: #34d399;
+            --error-color: #f87171;
         }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        .container-fluid {
+            max-width: 1200px;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 2rem;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            color: var(--text-color);
+        }
+
         .nav-tabs {
-            margin-bottom: 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
         }
+
+        .nav-tabs .nav-link {
+            color: var(--text-color);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .nav-tabs .nav-link:hover {
+            background-color: var(--hover-color);
+            border: none;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background-color: transparent;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .tab-content {
+            background-color: var(--card-background);
+            border-radius: 0.5rem;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #3b82f6;
+        }
+
+        .btn-danger {
+            background-color: var(--error-color);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background-color: #ef4444;
+        }
+
         .status-message {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
         }
+
         .status-success {
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
         }
+
         .status-error {
-            background-color: #f8d7da;
-            color: #721c24;
+            background-color: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .progress {
+            height: 0.5rem;
+            background-color: var(--border-color);
+            border-radius: 0.25rem;
+            margin: 1rem 0;
+        }
+
+        .progress-bar {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 0.25rem;
+        }
+
+        .progress-info {
+            font-size: 0.875rem;
+            color: var(--text-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .form-check-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25);
+        }
+
+        .log-box {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .log-header {
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-content {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+
+        .log-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .log-content::-webkit-scrollbar-track {
+            background: #334155;
+            border-radius: 4px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .log-content::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        .btn-outline-secondary {
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--hover-color);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
     </style>
 </head>
 <body>
-    <div class="container mt-4">
+    <div class="container-fluid mt-4">
         <h1 class="mb-4">Model Control Panel</h1>
         
         <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -78,26 +275,90 @@
             <!-- Model Downloads Tab -->
             <div class="tab-pane fade" id="models" role="tabpanel">
                 <h3>Download Models</h3>
-                <div class="list-group">
-                    {% for script in download_scripts %}
-                    <button class="list-group-item list-group-item-action download-script" data-script="{{ script }}">
-                        {{ script|title }} Models
-                    </button>
-                    {% endfor %}
+                <form id="modelDownloadForm">
+                    <div class="mb-4">
+                        {% for script in download_scripts %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" value="{{ script.name }}" id="script-{{ script.name }}">
+                            <label class="form-check-label" for="script-{{ script.name }}">
+                                {{ script.display_name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="downloadSelected">Download Selected</button>
+                </form>
+                <div id="modelStatus" class="status-message mt-3"></div>
+                <div class="log-box mt-3">
+                    <div class="log-header d-flex justify-content-between align-items-center mb-2">
+                        <h4 class="mb-0">Download Log</h4>
+                        <button class="btn btn-sm btn-outline-secondary" id="clearLog">Clear Log</button>
+                    </div>
+                    <div id="modelLog" class="log-content"></div>
                 </div>
-                <div id="modelStatus" class="status-message"></div>
             </div>
 
             <!-- Flux Downloader Tab -->
             <div class="tab-pane fade" id="flux" role="tabpanel">
                 <h3>Flux Model Downloader</h3>
-                <iframe src="http://localhost:5000" style="width: 100%; height: 600px; border: none;"></iframe>
+                <form id="fluxForm" method="POST" action="/download_flux">
+                    <div class="mb-3">
+                        <label for="fluxToken" class="form-label">Hugging Face Token</label>
+                        <input type="text" class="form-control" id="fluxToken" name="token" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Download</button>
+                    <button type="button" class="btn btn-danger" id="stopFlux">Stop Download</button>
+                </form>
+                <div id="fluxStatus" class="status-message"></div>
+                <div class="progress-info">
+                    <div class="progress">
+                        <div id="fluxProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span id="fluxDownloaded">Downloaded: 0B</span> / <span id="fluxTotal">0B</span>
+                        <span class="ms-3">Speed: <span id="fluxSpeed">0B/s</span></span>
+                        <span class="ms-3">ETA: <span id="fluxEta">Unknown</span></span>
+                    </div>
+                </div>
             </div>
 
             <!-- CivitAI Downloader Tab -->
             <div class="tab-pane fade" id="civitai" role="tabpanel">
                 <h3>CivitAI Model Downloader</h3>
-                <iframe src="http://localhost:5001" style="width: 100%; height: 600px; border: none;"></iframe>
+                <form id="civitaiForm" method="POST" action="/download_civitai">
+                    <div class="mb-3">
+                        <label for="civitaiUrl" class="form-label">Model URL</label>
+                        <input type="url" class="form-control" id="civitaiUrl" name="url" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="modelType" class="form-label">Model Type</label>
+                        <select class="form-select" id="modelType" name="model_type" required>
+                            <option value="lora">Lora</option>
+                            <option value="checkpoint">Checkpoint</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="filename" class="form-label">Filename</label>
+                        <input type="text" class="form-control" id="filename" name="filename" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="civitaiToken" class="form-label">CivitAI Token (optional)</label>
+                        <input type="text" class="form-control" id="civitaiToken" name="token">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Download</button>
+                    <button type="button" class="btn btn-danger" id="stopCivitai">Stop Download</button>
+                </form>
+                <div id="civitaiStatus" class="status-message"></div>
+                <div class="progress-info">
+                    <div class="progress">
+                        <div id="civitaiProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span id="civitaiDownloaded">Downloaded: 0B</span> / <span id="civitaiTotal">0B</span>
+                        <span class="ms-3">Speed: <span id="civitaiSpeed">0B/s</span></span>
+                        <span class="ms-3">ETA: <span id="civitaiEta">Unknown</span></span>
+                    </div>
+                </div>
             </div>
 
             <!-- HuggingFace Tab -->
@@ -133,25 +394,157 @@
             });
         });
 
-        // Handle Model Download Scripts
-        document.querySelectorAll('.download-script').forEach(button => {
-            button.addEventListener('click', function() {
-                const scriptName = this.dataset.script;
+        // Handle Model Download Form
+        document.getElementById('modelDownloadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const selectedScripts = Array.from(document.querySelectorAll('.form-check-input:checked'))
+                .map(checkbox => checkbox.value);
+            
+            if (selectedScripts.length === 0) {
+                const statusDiv = document.getElementById('modelStatus');
+                statusDiv.className = 'status-message status-error';
+                statusDiv.textContent = 'Please select at least one model to download';
+                return;
+            }
+
+            // Clear previous status and log
+            document.getElementById('modelStatus').className = 'status-message';
+            document.getElementById('modelStatus').textContent = '';
+            document.getElementById('modelLog').textContent = '';
+
+            // Start downloads for each selected script
+            selectedScripts.forEach(script => {
+                const scriptLabel = document.querySelector(`label[for="script-${script}"]`).textContent;
                 fetch('/run_download_script', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
                     },
-                    body: `script_name=${scriptName}`
+                    body: `script_name=${script}`
                 })
                 .then(response => response.json())
                 .then(data => {
-                    const statusDiv = document.getElementById('modelStatus');
-                    statusDiv.className = `status-message status-${data.status}`;
-                    statusDiv.textContent = data.message;
+                    const logDiv = document.getElementById('modelLog');
+                    logDiv.textContent += `Starting download for ${scriptLabel}...\n`;
+                    
+                    if (data.status === 'error') {
+                        logDiv.textContent += `Error: ${data.message}\n`;
+                    } else {
+                        logDiv.textContent += `${data.message}\n`;
+                    }
+                    
+                    // Scroll to bottom of log
+                    logDiv.scrollTop = logDiv.scrollHeight;
                 });
             });
         });
+
+        // Clear log button
+        document.getElementById('clearLog').addEventListener('click', function() {
+            document.getElementById('modelLog').textContent = '';
+        });
+
+        // Handle Flux Download Form and Status Updates
+        document.getElementById('fluxForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/download_flux', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    const statusDiv = document.getElementById('fluxStatus');
+                    statusDiv.className = 'status-message status-error';
+                    statusDiv.textContent = data.error;
+                } else {
+                    startFluxStatusUpdates();
+                }
+            });
+        });
+
+        document.getElementById('stopFlux').addEventListener('click', function() {
+            fetch('/stop_flux', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('fluxStatus');
+                statusDiv.className = 'status-message status-info';
+                statusDiv.textContent = 'Download stopped';
+            });
+        });
+
+        function startFluxStatusUpdates() {
+            const statusInterval = setInterval(function() {
+                fetch('/flux_status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('fluxStatus');
+                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
+                    statusDiv.textContent = data.message;
+
+                    document.getElementById('fluxProgress').style.width = `${data.progress}%`;
+                    document.getElementById('fluxDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                    document.getElementById('fluxTotal').textContent = data.total;
+                    document.getElementById('fluxSpeed').textContent = data.speed;
+                    document.getElementById('fluxEta').textContent = data.eta;
+
+                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
+                        clearInterval(statusInterval);
+                    }
+                });
+            }, 1000);
+        }
+
+        // Handle CivitAI Download Form and Status Updates
+        document.getElementById('civitaiForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetch('/download_civitai', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    const statusDiv = document.getElementById('civitaiStatus');
+                    statusDiv.className = 'status-message status-error';
+                    statusDiv.textContent = data.error;
+                } else {
+                    startCivitaiStatusUpdates();
+                }
+            });
+        });
+
+        document.getElementById('stopCivitai').addEventListener('click', function() {
+            fetch('/stop_civitai', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('civitaiStatus');
+                statusDiv.className = 'status-message status-info';
+                statusDiv.textContent = 'Download stopped';
+            });
+        });
+
+        function startCivitaiStatusUpdates() {
+            const statusInterval = setInterval(function() {
+                fetch('/civitai_status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('civitaiStatus');
+                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
+                    statusDiv.textContent = data.message;
+
+                    document.getElementById('civitaiProgress').style.width = `${data.progress}%`;
+                    document.getElementById('civitaiDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                    document.getElementById('civitaiTotal').textContent = data.total;
+                    document.getElementById('civitaiSpeed').textContent = data.speed;
+                    document.getElementById('civitaiEta').textContent = data.eta;
+
+                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
+                        clearInterval(statusInterval);
+                    }
+                });
+            }, 1000);
+        }
 
         // Handle HuggingFace Form
         document.getElementById('hfForm').addEventListener('submit', function(e) {

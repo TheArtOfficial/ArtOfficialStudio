@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# Model: Wan2.1 Fun
 echo "Downloading Wan2.1 Fun models..."
 
 # Download 1.3B Control model

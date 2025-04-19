@@ -1,5 +1,9 @@
 #!/bin/bash
+# Model: HunyuanVideo Models
 
+echo "Downloading Wan2.1 I2V model and related files..."
+
+// ... rest of the existing code ...
 echo "Downloading HunyuanVideo model files..."
 
 # Download CLIP vision model
