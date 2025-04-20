@@ -287,8 +287,19 @@
                         {% endfor %}
                     </div>
                     <button type="submit" class="btn btn-primary" id="downloadSelected">Download Selected</button>
+                    <button type="button" class="btn btn-danger" id="stopModelDownload">Stop Download</button>
                 </form>
                 <div id="modelStatus" class="status-message mt-3"></div>
+                <div class="progress-info mt-3">
+                    <div class="progress">
+                        <div id="modelProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span id="modelDownloaded">Downloaded: 0B</span> / <span id="modelTotal">0B</span>
+                        <span class="ms-3">Speed: <span id="modelSpeed">0B/s</span></span>
+                        <span class="ms-3">ETA: <span id="modelEta">Unknown</span></span>
+                    </div>
+                </div>
                 <div class="log-box mt-3">
                     <div class="log-header d-flex justify-content-between align-items-center mb-2">
                         <h4 class="mb-0">Download Log</h4>
@@ -412,30 +423,146 @@
             document.getElementById('modelStatus').textContent = '';
             document.getElementById('modelLog').textContent = '';
 
-            // Start downloads for each selected script
-            selectedScripts.forEach(script => {
-                const scriptLabel = document.querySelector(`label[for="script-${script}"]`).textContent;
-                fetch('/run_download_script', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `script_name=${script}`
-                })
+            // Download the first selected script
+            downloadNextScript(selectedScripts, 0);
+        });
+
+        function downloadNextScript(scripts, index) {
+            if (index >= scripts.length) {
+                return; // All scripts processed
+            }
+
+            const script = scripts[index];
+            const scriptLabel = document.querySelector(`label[for="script-${script}"]`).textContent;
+            
+            fetch('/run_download_script', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `script_name=${script}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                const logDiv = document.getElementById('modelLog');
+                logDiv.textContent += `Starting download for ${scriptLabel}...\n`;
+                
+                if (data.status === 'error') {
+                    logDiv.textContent += `Error: ${data.message}\n`;
+                    // Try the next script
+                    downloadNextScript(scripts, index + 1);
+                } else {
+                    logDiv.textContent += `${data.message}\n`;
+                    // Start monitoring status for this script
+                    startModelStatusUpdates(scripts, index);
+                }
+                
+                // Scroll to bottom of log
+                logDiv.scrollTop = logDiv.scrollHeight;
+            });
+        }
+
+        function startModelStatusUpdates(scripts, currentIndex) {
+            let prevDownloaded = '';
+            let prevProgress = 0;
+            let prevMessage = '';
+            let lastUpdateTime = Date.now();
+            
+            const statusInterval = setInterval(function() {
+                fetch('/model_status')
                 .then(response => response.json())
                 .then(data => {
+                    const statusDiv = document.getElementById('modelStatus');
+                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
+                    statusDiv.textContent = data.message;
+
+                    // Always update the progress bar and status information
+                    document.getElementById('modelProgress').style.width = `${data.progress}%`;
+                    document.getElementById('modelDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                    document.getElementById('modelTotal').textContent = data.total;
+                    document.getElementById('modelSpeed').textContent = data.speed;
+                    document.getElementById('modelEta').textContent = data.eta;
+
                     const logDiv = document.getElementById('modelLog');
-                    logDiv.textContent += `Starting download for ${scriptLabel}...\n`;
+                    const currentTime = Date.now();
+                    const timeElapsed = currentTime - lastUpdateTime;
                     
-                    if (data.status === 'error') {
-                        logDiv.textContent += `Error: ${data.message}\n`;
-                    } else {
+                    // Only update log if:
+                    // 1. Downloaded size changed, or
+                    // 2. Progress changed by at least 1%, or
+                    // 3. At least 5 seconds passed since last update
+                    if (data.status === 'downloading' && data.progress > 0 && 
+                        (data.downloaded !== prevDownloaded || 
+                         Math.abs(data.progress - prevProgress) >= 1 ||
+                         timeElapsed > 5000)) {
+                        
+                        // Store the current values for future comparison
+                        prevDownloaded = data.downloaded;
+                        prevProgress = data.progress;
+                        prevMessage = data.message;
+                        lastUpdateTime = currentTime;
+                        
+                        // Create a formatted progress message
+                        const progressMsg = `${data.message} (${data.downloaded}/${data.total}, ${data.speed})`;
+                        
+                        // Update the log with new information
+                        const lines = logDiv.textContent.split('\n');
+                        
+                        // If the last non-empty line was a progress update, replace it
+                        let replaced = false;
+                        for (let i = lines.length - 1; i >= 0; i--) {
+                            if (lines[i].trim() !== '' && lines[i].includes('Downloading')) {
+                                lines[i] = progressMsg;
+                                replaced = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!replaced) {
+                            // No previous progress line found, add a new one
+                            logDiv.textContent += progressMsg + '\n';
+                        } else {
+                            // Update with modified lines
+                            logDiv.textContent = lines.join('\n');
+                        }
+                    } else if (data.status !== 'downloading' && data.message !== prevMessage) {
+                        // For non-progress messages (errors, completion, etc.)
+                        prevMessage = data.message;
                         logDiv.textContent += `${data.message}\n`;
+                    }
+
+                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
+                        clearInterval(statusInterval);
+                        
+                        // Add final message if not already added
+                        if (!logDiv.textContent.includes(data.message)) {
+                            logDiv.textContent += `${data.message}\n`;
+                        }
+                        
+                        // Move to the next script after a brief delay
+                        setTimeout(() => {
+                            downloadNextScript(scripts, currentIndex + 1);
+                        }, 2000);
                     }
                     
                     // Scroll to bottom of log
                     logDiv.scrollTop = logDiv.scrollHeight;
                 });
+            }, 500); // Check more frequently (every 500ms instead of 1000ms)
+        }
+
+        // Stop model download button
+        document.getElementById('stopModelDownload').addEventListener('click', function() {
+            fetch('/stop_model_download', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('modelStatus');
+                statusDiv.className = 'status-message status-info';
+                statusDiv.textContent = 'Download stopped';
+                
+                const logDiv = document.getElementById('modelLog');
+                logDiv.textContent += 'Download stopped by user\n';
+                logDiv.scrollTop = logDiv.scrollHeight;
             });
         });
 

@@ -26,6 +26,7 @@ echo "Setting up directory structure..."
 rm -rf /workspace/ComfyUI/user/default/workflows
 mkdir -p /workspace/ComfyUI/user/default/workflows
 mv /workspace/workflows/* /workspace/ComfyUI/user/default/workflows
+rm -rf /workspace/workflows
 
 # Install ComfyUI nodes
 echo "Installing ComfyUI custom nodes..."
@@ -91,6 +92,18 @@ cd ..
 # LatentSync Wrapper
 git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git
 cd ComfyUI-LatentSyncWrapper
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt -qq
+cd ..
+
+# FramePackI2V
+git clone https://github.com/kijai/ComfyUI-FramePackWrapper.git
+cd ComfyUI-FramePackWrapper
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt -qq
+cd ..
+
+# ComfyUI Essentials
+git clone https://github.com/cubiq/ComfyUI_essentials.git
+cd ComfyUI_essentials
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt -qq
 cd ..
 

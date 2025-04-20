@@ -1,5 +1,6 @@
 #!/bin/bash
-# Model: SDXL Base Model
+# Model: Stable Diffusion XL (SDXL)
+
 echo "Downloading SDXL base model..."
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/checkpoints \
     -o sd_xl_base_1.0.safetensors \

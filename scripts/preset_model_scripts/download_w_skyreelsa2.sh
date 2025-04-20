@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: VACE, Skyreels, and Recam Models (Also download Wan2.1 if you want to use them)
+# Model: SkyreelsA2
 
 echo "Downloading VACE, Skyreels, and Recam models..."
 

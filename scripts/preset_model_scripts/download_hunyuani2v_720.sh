@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: HunyuanVideo Models
+# Model: HunyuanVideo I2V 720
 
 echo "Downloading Wan2.1 I2V model and related files..."
 
@@ -10,11 +10,6 @@ echo "Downloading HunyuanVideo model files..."
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/clip_vision \
     -o llava_llama3_vision.safetensors \
     https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/clip_vision/llava_llama3_vision.safetensors
-
-# Download diffusion models
-aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models \
-    -o hunyuan_video_t2v_720p_bf16.safetensors \
-    https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged/resolve/main/split_files/diffusion_models/hunyuan_video_t2v_720p_bf16.safetensors
 
 aria2c -x 16 -s 16 -d /workspace/ComfyUI/models/diffusion_models \
     -o hunyuan_video_image_to_video_720p_bf16.safetensors \

@@ -88,6 +88,7 @@ start_jupyter() {
 echo "Pod Started"
 
 setup_ssh
+execute_script "/scripts/comfy_setup.sh" "Running ComfyUI setup script..."
 # Start JupyterLab
 jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*' --NotebookApp.token='' --ServerApp.preferred_dir=/workspace --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}' &
 echo "JupyterLab started"
