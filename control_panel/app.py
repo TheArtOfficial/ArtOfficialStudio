@@ -1032,9 +1032,61 @@ def stop_civitai_download():
             })
     return jsonify({"status": "stopped"})
 
+@app.route('/stop_model_download', methods=['POST'])
+def stop_model_download():
+    global model_current_process, model_download_status
+    if model_current_process:
+        try:
+            # Get the process group ID and kill it
+            pgid = os.getpgid(model_current_process.pid)
+            os.killpg(pgid, signal.SIGTERM)
+            time.sleep(1)
+            
+            # Update status
+            model_download_status.update({
+                "status": "stopped",
+                "message": "Download stopped by user",
+                "progress": 0,
+                "downloaded": "0B",
+                "total": "0B",
+                "speed": "0B/s",
+                "eta": "Unknown"
+            })
+            
+        except Exception as e:
+            print(f"Error stopping download: {e}")
+        finally:
+            model_current_process = None
+    return jsonify({"status": "stopped"})
+
 @app.route('/civitai_status')
 def civitai_status():
     return jsonify(civitai_download_status)
+
+@app.route('/model_status')
+def model_status():
+    """
+    Return the current status of model downloads.
+    This endpoint is polled by the frontend to update progress.
+    """
+    # Add some additional state validation
+    global model_current_process
+    
+    # If process doesn't exist but status is still downloading, reset it
+    if not model_current_process and model_download_status.get('status') == 'downloading':
+        model_download_status.update({
+            "status": "error",
+            "message": "Download process exited unexpectedly. Please try again.",
+            "progress": 0,
+            "downloaded": "0B",
+            "total": "0B",
+            "speed": "0B/s",
+            "eta": "Unknown"
+        })
+    
+    # Add some minimal logging
+    print(f"STATUS UPDATE: {model_download_status.get('status')}, Progress: {model_download_status.get('progress')}%, Message: {model_download_status.get('message')}")
+    return jsonify(model_download_status)
 
 @app.route('/huggingface_status')
 def huggingface_status():
