@@ -81,6 +81,9 @@ model_download_status = {
     "total": "0B",
     "speed": "0B/s",
     "eta": "Unknown",
+    "current_model": "",
+    "total_models": 0,
+    "completed_models": 0,
     "script_name": "",
     "display_name": ""
 }
@@ -102,6 +105,8 @@ huggingface_download_status = {
 civitai_current_process = None
 model_current_process = None
 huggingface_current_process = None
+
+model_download_thread = None
 
 # -------------------------------------------------------------------------
 # Helper Functions
@@ -247,28 +252,35 @@ def extract_aria2c_commands(script_path):
     
     try:
         with open(script_path, 'r') as f:
+            current_command = None
+            
             for line in f:
                 line = line.strip()
                 
-                # Skip if not an aria2c command
-                if not line.startswith('aria2c'):
+                # Skip empty lines and comments
+                if not line or line.startswith('#'):
                     continue
                     
-                # Extract the command (may span multiple lines)
-                cmd = line
-                if line.endswith('\\'):
-                    cmd = line[:-1]  # Remove trailing backslash
+                # Check if line starts with aria2c
+                if line.startswith('aria2c'):
+                    if current_command:
+                        current_command = current_command.replace('\\', '')
+                        current_command = current_command.replace('  ', ' ')
+                        commands.append(current_command)
+                    current_command = line
+                # Handle command continuation
+                elif current_command and line.endswith('\\'):
+                    add_line = line[:-1]
+                    current_command += ' ' + add_line
+                elif current_command:
+                    current_command += ' ' + line
                     
-                    # Read continuation lines
-                    for cont_line in f:
-                        cont_line = cont_line.strip()
-                        if cont_line.endswith('\\'):
-                            cmd += ' ' + cont_line[:-1]
-                        else:
-                            cmd += ' ' + cont_line
-                            break
-                            
-                commands.append(cmd)
+            # Add the last command if exists
+            if current_command:
+                current_command = current_command.replace('\\', '')
+                current_command = current_command.replace('  ', ' ')
+                commands.append(current_command)
+                
         print(f"DEBUG: Found {len(commands)} aria2c commands")
     except Exception as e:
         print(f"DEBUG: Error extracting aria2c commands from {script_path}: {e}")
@@ -285,35 +297,25 @@ def extract_filename_from_command(cmd):
     Returns:
         str: The extracted filename, or None if not found
     """
-    # Check if the command is not a string
     if not isinstance(cmd, str):
         return None
         
-    # Look for -o or --out parameters
-    output_match = re.search(r'(?:--out=|\s-o\s+)["\'](.*?)["\']', cmd)
+    # First try to find the output path using -o or --out
+    output_match = re.search(r'(?:--out=|\s-o\s+)["\']([^"\']+)["\']', cmd)
     if output_match:
         return output_match.group(1)
     
-    # Try to extract filename from the URL in the command
+    # If no output path found, try to extract from the URL
     url_match = re.search(r'https?://[^\s"\']+', cmd)
-    if not url_match:
-        return None
+    if url_match:
+        url = url_match.group(0)
+        # Extract filename from URL
+        filename = url.split('/')[-1]
+        # Remove any query parameters
+        filename = filename.split('?')[0]
+        return filename
     
-    url = url_match.group(0)
-    filename_match = re.search(r'/([^/]+)$', url)
-    if filename_match:
-        return filename_match.group(1)
-    
-    # Extract based on directory and output pattern
-    filename_start = cmd.find('"/workspace/ComfyUI/models/')
-    if filename_start == -1:
-        return None
-    
-    filename_end = cmd.find('"', filename_start + 1)
-    if filename_end == -1:
-        return None
-    
-    return cmd[filename_start:filename_end]
+    return None
 
 def update_download_status(status_dict, **kwargs):
     """
@@ -324,283 +326,6 @@ def update_download_status(status_dict, **kwargs):
         **kwargs: Key-value pairs to update in the dictionary
     """
     status_dict.update(kwargs)
-
-
-def process_aria2c_line(line, status_dict, filename, display_name, file_index=None, total_files=None):
-    """
-    Process a line of aria2c output and update the status dictionary.
-    
-    Args:
-        line: The line of aria2c output to process
-        status_dict: The status dictionary to update
-        filename: The name of the file being downloaded
-        display_name: The display name of the model
-        file_index: The index of the current file (optional)
-        total_files: The total number of files to download (optional)
-    
-    Returns:
-        bool: True if the line contained download progress information, False otherwise
-    """
-    if not line:
-        return False
-        
-    # Try to parse download progress information
-    downloaded, total, percent, speed, eta = parse_aria2c_output(line)
-    if downloaded and total and percent is not None:
-        # Format the message based on whether we're tracking multiple files
-        if file_index is not None and total_files is not None:
-            message = f"Downloading {filename} for {display_name}... {percent}% ({file_index}/{total_files})"
-        else:
-            message = f"Downloading {filename}... {percent}%"
-        
-        # Update the status dictionary
-        update_download_status(
-            status_dict,
-            downloaded=downloaded,
-            total=total,
-            progress=percent,
-            speed=speed + "/s",
-            eta=eta,
-            message=message
-        )
-        return True
-    
-    # Handle other aria2c output that looks like status information
-    if '[' in line and ']' in line:
-        if file_index is not None and total_files is not None:
-            message = f"{line} ({file_index}/{total_files})"
-        else:
-            message = line
-        status_dict["message"] = message
-        return True
-        
-    # Handle any other non-empty output
-    if line.strip():
-        if file_index is not None and total_files is not None:
-            message = f"{line} ({file_index}/{total_files})"
-        else:
-            message = line
-        status_dict["message"] = message
-        return True
-        
-    return False
-
-
-def run_aria2c_command(cmd, status_dict, filename, display_name, file_index=None, total_files=None, token=None):
-    """Run an aria2c command and process its output."""
-    global model_current_process
-    
-    print(f"DEBUG: Starting aria2c command for {filename}")
-    
-    # Update status message and ensure status is set to downloading
-    status_dict["status"] = "downloading"  # Ensure status is set to downloading
-    
-    if file_index is not None and total_files is not None:
-        status_dict["message"] = f"Downloading {filename} for {display_name}... ({file_index}/{total_files})"
-    else:
-        status_dict["message"] = f"Downloading {filename}..."
-    
-    try:
-        # If token is provided, add the authorization header to aria2c
-        if token:
-            # Add --header option before the URL in the command
-            cmd = cmd.replace('"https://', '--header="Authorization: Bearer ' + token + '" "https://')
-        
-        # Start the aria2c process - modify the command to include unbuffered output
-        modified_cmd = f"stdbuf -oL {cmd}"  # Use stdbuf to disable output buffering
-        print(f"DEBUG: Running command with unbuffered output: {modified_cmd[:80]}...")
-        
-        model_current_process = subprocess.Popen(
-            modified_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            shell=True,
-            bufsize=1,  # Line buffered
-            env=dict(os.environ, PYTHONUNBUFFERED="1"),  # Add unbuffered env var
-            preexec_fn=os.setsid  # Create new process group
-        )
-        print(f"DEBUG: Process started with PID: {model_current_process.pid}")
-        
-        # Read output line by line
-        for line in iter(model_current_process.stdout.readline, ''):
-            print(f"DEBUG: Got line: {line.strip()}")
-            if line.strip():
-                process_aria2c_line(line.strip(), status_dict, filename, display_name, file_index, total_files)
-        
-        # Check if stderr has output (for debugging)
-        stderr_output = model_current_process.stderr.read()
-        if stderr_output:
-            print(f"DEBUG: STDERR from aria2c: {stderr_output}")
-        
-        # Wait for process to complete
-        return_code = model_current_process.wait()
-        print(f"DEBUG: Process completed with return code {return_code}")
-        return return_code
-        
-    except Exception as e:
-        print(f"DEBUG: Error in run_aria2c_command: {e}")
-        if model_current_process:
-            try:
-                pgid = os.getpgid(model_current_process.pid)
-                os.killpg(pgid, signal.SIGTERM)
-            except Exception as kill_ex:
-                print(f"DEBUG: Error killing process: {kill_ex}")
-        raise
-
-
-def run_model_download(script_path, script_name, display_name, token=None):
-    """
-    Run a model download script, tracking progress and updating status.
-    Uses the HuggingFace download method sequentially for each model.
-    """
-    global model_download_status, model_current_process
-    
-    try:
-        # Initialize download status
-        model_download_status.update({
-            "status": "downloading",
-            "message": f"Starting download for {display_name}...",
-            "progress": 0,
-            "downloaded": "0B",
-            "total": "0B",
-            "speed": "0B/s",
-            "eta": "Unknown",
-            "script_name": script_name,
-            "display_name": display_name
-        })
-        
-        # Ensure directories exist
-        ensure_directories_exist()
-        
-        # Extract aria2c commands from the script
-        commands = extract_aria2c_commands(script_path)
-        if not commands:
-            print(f"DEBUG: No aria2c commands found, falling back to direct script execution")
-            env = os.environ.copy()
-            if token:
-                env['HF_TOKEN'] = token
-            return run_script_fallback(script_path, display_name, env)
-        
-        # Run each command sequentially
-        for i, cmd in enumerate(commands):
-            if model_download_status.get('status') == 'stopped':
-                return
-                
-            # Extract URL from the command
-            url_match = re.search(r'https?://[^\s"\']+', cmd)
-            if not url_match:
-                print(f"DEBUG: No URL found in command: {cmd}")
-                continue
-                
-            url = url_match.group(0)
-            
-            # Extract download path from the command
-            path_match = re.search(r'-d\s+["\']([^"\']+)["\']', cmd)
-            download_path = path_match.group(1) if path_match else None
-            
-            # Update status for current file
-            model_download_status.update({
-                "message": f"Downloading file {i+1}/{len(commands)} for {display_name}..."
-            })
-            
-            # Run the download using the HuggingFace method
-            success = run_huggingface_download(url, token, download_path)
-            
-            if not success:
-                model_download_status.update({
-                    "status": "error",
-                    "message": f"Error downloading file {i+1}/{len(commands)} for {display_name}"
-                })
-                return
-        
-        # All files downloaded successfully
-        model_download_status.update({
-            "status": "completed",
-            "message": f"Download completed successfully for {display_name}!",
-            "progress": 100
-        })
-        
-    except Exception as e:
-        print(f"Error in run_model_download: {e}")
-        model_download_status.update({
-            "status": "error",
-            "message": f"Error: {str(e)}"
-        })
-    finally:
-        model_current_process = None
-
-
-def run_script_fallback(script_path, display_name, env):
-    """
-    Fallback method to run a script directly when no aria2c commands are found.
-    
-    Args:
-        script_path: Path to the script to run
-        display_name: Human-readable name of the model
-        env: Environment variables for the script
-    """
-    global model_download_status, model_current_process
-    
-    print(f"DEBUG: Running fallback script for {display_name}: {script_path}")
-    
-    try:
-        # Add stdbuf to disable output buffering
-        command = f"stdbuf -oL bash {script_path}"
-        
-        model_current_process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            shell=True,
-            bufsize=1,
-            env=env
-        )
-        
-        print(f"DEBUG: Started fallback script with PID: {model_current_process.pid}")
-        
-        # Read output line by line
-        for line in iter(model_current_process.stdout.readline, ''):
-            if line.strip():
-                print(f"DEBUG: Script output: {line.strip()}")
-                model_download_status["message"] = line.strip()
-        
-        # Wait for process to complete
-        return_code = model_current_process.wait()
-        print(f"DEBUG: Script completed with return code: {return_code}")
-        
-        if return_code == 0:
-            update_download_status(
-                model_download_status,
-                status="completed",
-                message=f"Download completed successfully for {display_name}!",
-                progress=100
-            )
-        else:
-            update_download_status(
-                model_download_status,
-                status="error",
-                message=f"Error during download of {display_name}. Please check the logs.",
-                progress=0
-            )
-            
-        return return_code
-        
-    except Exception as e:
-        print(f"DEBUG: Error in run_script_fallback: {e}")
-        update_download_status(
-            model_download_status,
-            status="error",
-            message=f"Error: {str(e)}",
-            progress=0
-        )
-        if model_current_process:
-            try:
-                model_current_process.kill()
-            except:
-                pass
-        return 1
 
 def run_huggingface_download(url, token=None, download_path=None):
     """
@@ -801,20 +526,19 @@ class HuggingFaceForm(FlaskForm):
 @app.route('/')
 def index():
     # Get available download scripts
-    download_scripts = glob.glob('scripts/preset_model_scripts/download_*.sh')
-    script_info = []
-    for script in download_scripts:
+    download_scripts = []
+    for script in glob.glob('scripts/preset_model_scripts/download_*.sh'):
         script_name = os.path.basename(script).replace('download_', '').replace('.sh', '')
         model_info = parse_script_header(script)
-        script_info.append({
-            'id': script_name,  # Used for the download endpoint
-            'name': model_info['name'],  # The display name from the header
-            'description': model_info.get('description', ''),  # Optional description
-            'requires_token': model_info.get('requires_token', False)  # Whether it needs a HF token
+        download_scripts.append({
+            'id': script_name,
+            'name': model_info['name'],
+            'description': model_info.get('description', ''),
+            'requires_token': model_info.get('requires_token', False)
         })
     
-    # Sort script_info alphabetically by name
-    script_info.sort(key=lambda x: x['name'].lower())
+    # Sort scripts alphabetically by name
+    download_scripts.sort(key=lambda x: x['name'].lower())
     
     # Get available training tools
     training_tools = []
@@ -837,7 +561,7 @@ def index():
     return render_template('index.html', 
                          lora_form=lora_form,
                          hf_form=HuggingFaceForm(),
-                         download_scripts=script_info)
+                         download_scripts=download_scripts)
 
 @app.route('/install_training_tool', methods=['POST'])
 def install_training_tool():
@@ -851,122 +575,6 @@ def install_training_tool():
         return jsonify({'status': 'success', 'message': f'{tool} installed successfully'})
     except subprocess.CalledProcessError as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-@app.route('/run_download_script', methods=['POST'])
-def run_download_script():
-    script_names = json.loads(request.form.get('script_names', '[]'))
-    token = request.form.get('token')
-    
-    if not script_names:
-        return jsonify({'status': 'error', 'message': 'No models selected'}), 400
-    
-    # Get script info for all selected models
-    model_infos = []
-    for script_name in script_names:
-        download_script = f'scripts/preset_model_scripts/download_{script_name}.sh'
-        
-        if not os.path.exists(download_script):
-            return jsonify({'status': 'error', 'message': f'Script not found for {script_name}'}), 404
-        
-        model_info = parse_script_header(download_script)
-        model_infos.append((download_script, script_name, model_info))
-    
-    # Check if any selected model requires a token but none is provided
-    requires_token = any(info[2].get('requires_token', False) for info in model_infos)
-    if requires_token and not token:
-        return jsonify({
-            'status': 'error',
-            'message': 'HuggingFace token is required for one or more selected models'
-        }), 400
-    
-    # Reset download status
-    model_download_status.update({
-        "status": "downloading",
-        "message": "Initializing downloads...",
-        "progress": 0,
-        "downloaded": "0B",
-        "total": "0B",
-        "speed": "0B/s",
-        "eta": "Unknown",
-        "script_name": ", ".join(script_names),
-        "display_name": ", ".join(info[2]['name'] for info in model_infos)
-    })
-    
-    # Start downloads in a background thread
-    thread = threading.Thread(
-        target=run_model_downloads,
-        args=(model_infos, token)
-    )
-    thread.daemon = True
-    thread.start()
-    
-    return jsonify({
-        'status': 'success',
-        'message': f'Started downloading {len(script_names)} models'
-    })
-
-def run_model_downloads(model_infos, token=None):
-    """
-    Run multiple model downloads sequentially.
-    
-    Args:
-        model_infos: List of tuples (script_path, script_name, model_info)
-        token: Optional HuggingFace token
-    """
-    global model_download_status, model_current_process
-    
-    try:
-        # Ensure directories exist
-        ensure_directories_exist()
-        
-        for i, (script_path, script_name, model_info) in enumerate(model_infos):
-            if model_download_status.get('status') == 'stopped':
-                return
-                
-            # Update status for current model
-            model_download_status.update({
-                "status": "downloading",
-                "message": f"Downloading {model_info['name']} ({i+1}/{len(model_infos)})...",
-                "progress": 0,
-                "downloaded": "0B",
-                "total": "0B",
-                "speed": "0B/s",
-                "eta": "Unknown"
-            })
-            
-            try:
-                # Run the download
-                success = run_model_download(script_path, script_name, model_info['name'], token)
-                
-                if not success:
-                    model_download_status.update({
-                        "status": "error",
-                        "message": f"Error downloading {model_info['name']}"
-                    })
-                    return
-            except Exception as e:
-                print(f"Error downloading {model_info['name']}: {e}")
-                model_download_status.update({
-                    "status": "error",
-                    "message": f"Error downloading {model_info['name']}: {str(e)}"
-                })
-                return
-        
-        # All models downloaded successfully
-        model_download_status.update({
-            "status": "completed",
-            "message": "All downloads completed successfully!",
-            "progress": 100
-        })
-        
-    except Exception as e:
-        print(f"Error in run_model_downloads: {e}")
-        model_download_status.update({
-            "status": "error",
-            "message": f"Error: {str(e)}"
-        })
-    finally:
-        model_current_process = None
 
 @app.route('/download_huggingface', methods=['POST'])
 def download_huggingface():
@@ -1032,61 +640,9 @@ def stop_civitai_download():
             })
     return jsonify({"status": "stopped"})
 
-@app.route('/stop_model_download', methods=['POST'])
-def stop_model_download():
-    global model_current_process, model_download_status
-    if model_current_process:
-        try:
-            # Get the process group ID and kill it
-            pgid = os.getpgid(model_current_process.pid)
-            os.killpg(pgid, signal.SIGTERM)
-            time.sleep(1)
-            
-            # Update status
-            model_download_status.update({
-                "status": "stopped",
-                "message": "Download stopped by user",
-                "progress": 0,
-                "downloaded": "0B",
-                "total": "0B",
-                "speed": "0B/s",
-                "eta": "Unknown"
-            })
-            
-        except Exception as e:
-            print(f"Error stopping download: {e}")
-        finally:
-            model_current_process = None
-    return jsonify({"status": "stopped"})
-
 @app.route('/civitai_status')
 def civitai_status():
     return jsonify(civitai_download_status)
-
-@app.route('/model_status')
-def model_status():
-    """
-    Return the current status of model downloads.
-    This endpoint is polled by the frontend to update progress.
-    """
-    # Add some additional state validation
-    global model_current_process
-    
-    # If process doesn't exist but status is still downloading, reset it
-    if not model_current_process and model_download_status.get('status') == 'downloading':
-        model_download_status.update({
-            "status": "error",
-            "message": "Download process exited unexpectedly. Please try again.",
-            "progress": 0,
-            "downloaded": "0B",
-            "total": "0B",
-            "speed": "0B/s",
-            "eta": "Unknown"
-        })
-    
-    # Add some minimal logging
-    print(f"STATUS UPDATE: {model_download_status.get('status')}, Progress: {model_download_status.get('progress')}%, Message: {model_download_status.get('message')}")
-    return jsonify(model_download_status)
 
 @app.route('/huggingface_status')
 def huggingface_status():
@@ -1154,6 +710,289 @@ def health_check():
     Simple health check endpoint.
     """
     return jsonify({"status": "ok", "message": "Server is running"})
+
+def run_model_download(script_path, script_name, display_name, token=None):
+    """
+    Run a model download script and track its progress.
+    
+    Args:
+        script_path: Path to the download script
+        script_name: Name of the script
+        display_name: Display name of the model
+        token: Optional HuggingFace token
+    """
+    global model_download_status, model_current_process
+    
+    try:
+        print(f"DEBUG: Starting download for {display_name} from {script_path}")
+        
+        # Extract aria2c commands from the script
+        commands = extract_aria2c_commands(script_path)
+        
+        if not commands:
+            print(f"DEBUG: No aria2c commands found in {script_path}")
+            return False
+            
+        print(f"DEBUG: Found {len(commands)} commands to execute")
+            
+        # Run each command sequentially
+        for i, cmd in enumerate(commands):
+            if model_download_status.get('status') == 'stopped':
+                print("DEBUG: Download stopped by user")
+                return False
+                
+            # Update status for current file
+            model_download_status.update({
+                "current_model": f"{display_name} ({i+1}/{len(commands)})",
+                "message": f"Downloading {display_name} ({i+1}/{len(commands)})..."
+            })
+            
+            # Add token to URL if needed
+            if token:
+                # Find the URL in the command
+                url_match = re.search(r'https?://[^\s"\']+', cmd)
+                if url_match:
+                    url = url_match.group(0)
+                    # Add token to URL
+                    new_url = f"{url}?token={token}"
+                    # Replace the URL in the command
+                    cmd = cmd.replace(url, new_url)
+            
+            print(f"DEBUG: Executing command: {cmd}")
+            
+            # Run aria2c with unbuffered output
+            cmd = f"stdbuf -oL {cmd}"
+            model_current_process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                shell=True,
+                bufsize=1,
+                env=dict(os.environ, PYTHONUNBUFFERED="1"),
+                preexec_fn=os.setsid
+            )
+            
+            print(f"DEBUG: Started process with PID: {model_current_process.pid}")
+            
+            # Process output
+            while True:
+                output = model_current_process.stdout.readline()
+                if output == '' and model_current_process.poll() is not None:
+                    break
+                if output:
+                    line = output.strip()
+                    print(f"DEBUG: aria2c output: {line}")
+                    
+                    downloaded, total, percent, speed, eta = parse_aria2c_output(line)
+                    if downloaded and total and percent is not None:
+                        model_download_status.update({
+                            "downloaded": downloaded,
+                            "total": total,
+                            "progress": percent,
+                            "speed": speed + "/s",
+                            "eta": eta,
+                            "message": f"Downloading {display_name} ({i+1}/{len(commands)})... {percent}%"
+                        })
+            
+            # Check for errors
+            stderr_output = model_current_process.stderr.read()
+            if stderr_output:
+                print(f"DEBUG: aria2c stderr: {stderr_output}")
+            
+            # Wait for process to complete
+            return_code = model_current_process.wait()
+            print(f"DEBUG: Process completed with return code: {return_code}")
+            
+            if return_code != 0:
+                model_download_status.update({
+                    "status": "error",
+                    "message": f"Error downloading {display_name} ({i+1}/{len(commands)}). Return code: {return_code}"
+                })
+                return False
+                
+        return True
+        
+    except Exception as e:
+        print(f"DEBUG: Error in run_model_download: {str(e)}")
+        model_download_status.update({
+            "status": "error",
+            "message": f"Error: {str(e)}"
+        })
+        return False
+    finally:
+        model_current_process = None
+
+def run_model_downloads(model_infos, token=None):
+    """
+    Run multiple model downloads sequentially.
+    
+    Args:
+        model_infos: List of tuples (script_path, script_name, model_info)
+        token: Optional HuggingFace token
+    """
+    global model_download_status, model_download_thread
+    
+    try:
+        # Initialize status
+        model_download_status.update({
+            "status": "downloading",
+            "message": "Starting downloads...",
+            "progress": 0,
+            "downloaded": "0B",
+            "total": "0B",
+            "speed": "0B/s",
+            "eta": "Unknown",
+            "current_model": "",
+            "total_models": len(model_infos),
+            "completed_models": 0
+        })
+        
+        # Run each model download
+        for i, (script_path, script_name, model_info) in enumerate(model_infos):
+            if model_download_status.get('status') == 'stopped':
+                return
+                
+            # Update status for current model
+            model_download_status.update({
+                "current_model": model_info['name'],
+                "message": f"Downloading {model_info['name']} ({i+1}/{len(model_infos)})..."
+            })
+            
+            # Run the download
+            success = run_model_download(script_path, script_name, model_info['name'], token)
+            
+            if not success:
+                return
+                
+            # Update completed count
+            model_download_status["completed_models"] += 1
+            
+        # All downloads completed successfully
+        model_download_status.update({
+            "status": "completed",
+            "message": "All downloads completed successfully!",
+            "progress": 100
+        })
+        
+    except Exception as e:
+        print(f"Error in run_model_downloads: {e}")
+        model_download_status.update({
+            "status": "error",
+            "message": f"Error: {str(e)}"
+        })
+    finally:
+        model_download_thread = None
+
+@app.route('/run_download_script', methods=['POST'])
+def run_download_script():
+    script_names = json.loads(request.form.get('script_names', '[]'))
+    token = request.form.get('token')
+    
+    if not script_names:
+        return jsonify({'status': 'error', 'message': 'No models selected'}), 400
+    
+    # Get script info for all selected models
+    model_infos = []
+    for script_name in script_names:
+        download_script = f'scripts/preset_model_scripts/download_{script_name}.sh'
+        
+        if not os.path.exists(download_script):
+            return jsonify({'status': 'error', 'message': f'Script not found for {script_name}'}), 404
+        
+        model_info = parse_script_header(download_script)
+        model_infos.append((download_script, script_name, model_info))
+    
+    # Check if any selected model requires a token but none is provided
+    requires_token = any(info[2].get('requires_token', False) for info in model_infos)
+    if requires_token and not token:
+        return jsonify({
+            'status': 'error',
+            'message': 'HuggingFace token is required for one or more selected models'
+        }), 400
+    
+    # Start downloads in a background thread
+    global model_download_thread
+    model_download_thread = threading.Thread(
+        target=run_model_downloads,
+        args=(model_infos, token)
+    )
+    model_download_thread.daemon = True
+    model_download_thread.start()
+    
+    return jsonify({
+        'status': 'success',
+        'message': f'Started downloading {len(script_names)} models'
+    })
+
+@app.route('/stop_model_download', methods=['POST'])
+def stop_model_download():
+    global model_current_process, model_download_status, model_download_thread
+    
+    if model_current_process:
+        try:
+            # Get the process group ID and kill it
+            pgid = os.getpgid(model_current_process.pid)
+            os.killpg(pgid, signal.SIGTERM)
+            time.sleep(1)
+        except Exception as e:
+            print(f"Error stopping download: {e}")
+        finally:
+            model_current_process = None
+    
+    # Update status
+    model_download_status.update({
+        "status": "stopped",
+        "message": "Download stopped by user",
+        "progress": 0,
+        "downloaded": "0B",
+        "total": "0B",
+        "speed": "0B/s",
+        "eta": "Unknown"
+    })
+    
+    return jsonify({"status": "stopped"})
+
+@app.route('/model_status')
+def model_status():
+    """
+    Return the current status of model downloads.
+    This endpoint is polled by the frontend to update progress.
+    """
+    global model_current_process
+    
+    # If process doesn't exist but status is still downloading, reset it
+    if not model_current_process and model_download_status.get('status') == 'downloading':
+        model_download_status.update({
+            "status": "error",
+            "message": "Download process exited unexpectedly. Please try again.",
+            "progress": 0,
+            "downloaded": "0B",
+            "total": "0B",
+            "speed": "0B/s",
+            "eta": "Unknown"
+        })
+    
+    return jsonify(model_download_status)
+
+@app.route('/model_downloader')
+def model_downloader():
+    # Get available download scripts
+    download_scripts = []
+    for script in glob.glob('scripts/preset_model_scripts/download_*.sh'):
+        script_name = os.path.basename(script).replace('download_', '').replace('.sh', '')
+        model_info = parse_script_header(script)
+        download_scripts.append({
+            'id': script_name,
+            'name': model_info['name'],
+            'description': model_info.get('description', ''),
+            'requires_token': model_info.get('requires_token', False)
+        })
+    
+    # Sort scripts alphabetically by name
+    download_scripts.sort(key=lambda x: x['name'].lower())
+    
+    return render_template('model_downloader.html', download_scripts=download_scripts)
 
 if __name__ == '__main__':
     # Validate configuration
