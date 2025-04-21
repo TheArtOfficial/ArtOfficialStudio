@@ -1,5 +1,6 @@
 #!/bin/bash
-# Model: HiDream-I1 Fast
+# Model: HiDream Fast
+# Requires-HF-Token: false
 
 echo "Downloading files from HuggingFace repository Comfy-Org/HiDream-I1_ComfyUI..."
 

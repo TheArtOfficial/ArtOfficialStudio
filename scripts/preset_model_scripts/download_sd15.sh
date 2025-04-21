@@ -1,5 +1,6 @@
 #!/bin/bash
 # Model: Stable Diffusion 1.5 (SD1.5)
+# Requires-HF-Token: false
 
 echo "Downloading files from HuggingFace repository stable-diffusion-v1-5/stable-diffusion-v1-5..."
 

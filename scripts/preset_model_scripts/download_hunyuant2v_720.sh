@@ -1,5 +1,6 @@
 #!/bin/bash
-# Model: HunyuanVideo T2V 720
+# Model: HunyuanT2V 720p
+# Requires-HF-Token: false
 
 echo "Downloading Wan2.1 T2V model and related files..."
 

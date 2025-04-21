@@ -1,5 +1,6 @@
 #!/bin/bash
 # Model: ReCamMaster Wan2.1
+# Requires-HF-Token: false
 
 echo "Downloading VACE, Skyreels, and Recam models..."
 

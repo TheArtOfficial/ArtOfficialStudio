@@ -1,6 +1,6 @@
 #!/bin/bash
 # Model: Native WanFun 1.3B
-
+# Requires-HF-Token: false
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 
 # Create output directory if it doesn't exist

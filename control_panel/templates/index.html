@@ -227,141 +227,220 @@
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
+
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .form-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .submit-button {
+            background-color: #0366d6;
+            color: white;
+            border: none;
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+        .status-message {
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status-error {
+            background-color: #ffebe9;
+            color: #d1242f;
+            border: 1px solid #ffc1c0;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        .status-success {
+            background-color: #e6ffec;
+            color: #1a7f37;
+            border: 1px solid #b4e6c4;
+        }
+        .log-container {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f6f8fa;
+            border: 1px solid #d1d5da;
+            border-radius: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .progress-stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+        }
+        .download-table {
+            width: 100%;
+        }
+        .download-table th,
+        .download-table td {
+            padding: 8px;
+            text-align: left;
+        }
+        .download-table tr {
+            border-bottom: 1px solid #e1e4e8;
+        }
+        .download-table tr:last-child {
+            border-bottom: none;
+        }
+        .form-check-input {
+            margin-right: 5px;
+        }
+        .form-check {
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
     <div class="container-fluid mt-4">
         <h1 class="mb-4">Model Control Panel</h1>
         
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="lora-tab" data-bs-toggle="tab" data-bs-target="#lora" type="button" role="tab">Lora Training</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="models-tab" data-bs-toggle="tab" data-bs-target="#models" type="button" role="tab">Model Downloads</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="flux-tab" data-bs-toggle="tab" data-bs-target="#flux" type="button" role="tab">Flux Downloader</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="civitai-tab" data-bs-toggle="tab" data-bs-target="#civitai" type="button" role="tab">CivitAI Downloader</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="huggingface-tab" data-bs-toggle="tab" data-bs-target="#huggingface" type="button" role="tab">HuggingFace</button>
-            </li>
-        </ul>
+        <nav class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <button class="nav-link active" id="preset-tab" data-bs-toggle="tab" data-bs-target="#preset" type="button" role="tab">Model Downloader</button>
+            <button class="nav-link" id="training-tab" data-bs-toggle="tab" data-bs-target="#training" type="button" role="tab">Training Tools</button>
+            <button class="nav-link" id="civitai-tab" data-bs-toggle="tab" data-bs-target="#civitai" type="button" role="tab">CivitAI Downloader</button>
+            <button class="nav-link" id="huggingface-tab" data-bs-toggle="tab" data-bs-target="#huggingface" type="button" role="tab">HuggingFace Downloader</button>
+        </nav>
 
         <div class="tab-content" id="myTabContent">
-            <!-- Lora Training Tab -->
-            <div class="tab-pane fade show active" id="lora" role="tabpanel">
-                <h3>Install Lora Training Tools</h3>
-                <form id="loraForm" method="POST" action="/install_training_tool">
+            <!-- Model Downloader Tab -->
+            <div class="tab-pane fade show active" id="preset" role="tabpanel">
+                <h3>Model Downloader</h3>
+                <p>Download models from our collection.</p>
+                
+                <div class="table-responsive">
+                    <table class="table download-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px">Select</th>
+                                <th>Model</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for script in download_scripts %}
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input class="form-check-input model-checkbox" type="checkbox" 
+                                               data-requires-token="{{ script.requires_token|lower }}"
+                                               data-script-id="{{ script.id }}"
+                                               id="model-{{ script.id }}">
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ script.name }}
+                                    {% if script.requires_token %}
+                                    <span class="badge bg-primary ms-2">Requires HF Token</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ script.description }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Token Input Field (initially hidden) -->
+                <div id="tokenInputContainer" class="mb-3 d-none">
+                    <label for="hfToken" class="form-label">HuggingFace Token</label>
+                    <input type="text" class="form-control" id="hfToken" placeholder="Enter your HuggingFace token">
+                    <div class="form-text">Required for downloading private models</div>
+                </div>
+
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary" id="downloadSelectedBtn" disabled>Download Selected Models</button>
+                </div>
+
+                <div id="presetProgressSection" class="mt-4">
+                    <div id="presetStatus" class="status-message"></div>
+                    <div class="progress mt-2">
+                        <div id="presetProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="mt-2">
+                        <span id="presetDownloaded">Downloaded: 0B</span> / <span id="presetTotal">0B</span>
+                        <span class="ms-3">Speed: <span id="presetSpeed">0B/s</span></span>
+                        <span class="ms-3">ETA: <span id="presetEta">Unknown</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Tools Tab -->
+            <div class="tab-pane fade" id="training" role="tabpanel">
+                <h3>Training Tools</h3>
+                <p>Install and manage training tools for model customization.</p>
+                
+                <form id="trainingForm" method="POST" action="/install_training_tool">
                     {{ lora_form.csrf_token }}
                     <div class="mb-3">
-                        {{ lora_form.tool.label(class="form-label") }}
+                        <label for="tool" class="form-label">Select Training Tool</label>
                         {{ lora_form.tool(class="form-select") }}
                     </div>
-                    <div class="mb-3">
-                        <p class="text-muted">
-                            <strong>Flux Gym:</strong> For training Flux Loras<br>
-                            <strong>Diffusion Pipe:</strong> For training Wan, Hidream, Hunyuan, and LTX Loras
-                        </p>
-                    </div>
-                    {{ lora_form.submit(class="btn btn-primary") }}
+                    <button type="submit" class="btn btn-primary">Install</button>
                 </form>
-                <div id="loraStatus" class="status-message"></div>
-            </div>
 
-            <!-- Model Downloads Tab -->
-            <div class="tab-pane fade" id="models" role="tabpanel">
-                <h3>Download Models</h3>
-                <form id="modelDownloadForm">
-                    <div class="mb-4">
-                        {% for script in download_scripts %}
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" value="{{ script.name }}" id="script-{{ script.name }}">
-                            <label class="form-check-label" for="script-{{ script.name }}">
-                                {{ script.display_name }}
-                            </label>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="downloadSelected">Download Selected</button>
-                    <button type="button" class="btn btn-danger" id="stopModelDownload">Stop Download</button>
-                </form>
-                <div id="modelStatus" class="status-message mt-3"></div>
-                <div class="progress-info mt-3">
-                    <div class="progress">
-                        <div id="modelProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    <div class="mt-2">
-                        <span id="modelDownloaded">Downloaded: 0B</span> / <span id="modelTotal">0B</span>
-                        <span class="ms-3">Speed: <span id="modelSpeed">0B/s</span></span>
-                        <span class="ms-3">ETA: <span id="modelEta">Unknown</span></span>
-                    </div>
-                </div>
-                <div class="log-box mt-3">
-                    <div class="log-header d-flex justify-content-between align-items-center mb-2">
-                        <h4 class="mb-0">Download Log</h4>
-                        <button class="btn btn-sm btn-outline-secondary" id="clearLog">Clear Log</button>
-                    </div>
-                    <div id="modelLog" class="log-content"></div>
-                </div>
-            </div>
-
-            <!-- Flux Downloader Tab -->
-            <div class="tab-pane fade" id="flux" role="tabpanel">
-                <h3>Flux Model Downloader</h3>
-                <form id="fluxForm" method="POST" action="/download_flux">
-                    <div class="mb-3">
-                        <label for="fluxToken" class="form-label">Hugging Face Token</label>
-                        <input type="text" class="form-control" id="fluxToken" name="token" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Download</button>
-                    <button type="button" class="btn btn-danger" id="stopFlux">Stop Download</button>
-                </form>
-                <div id="fluxStatus" class="status-message"></div>
-                <div class="progress-info">
-                    <div class="progress">
-                        <div id="fluxProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                    </div>
-                    <div class="mt-2">
-                        <span id="fluxDownloaded">Downloaded: 0B</span> / <span id="fluxTotal">0B</span>
-                        <span class="ms-3">Speed: <span id="fluxSpeed">0B/s</span></span>
-                        <span class="ms-3">ETA: <span id="fluxEta">Unknown</span></span>
-                    </div>
-                </div>
+                <div id="trainingStatus" class="status-message mt-3"></div>
             </div>
 
             <!-- CivitAI Downloader Tab -->
             <div class="tab-pane fade" id="civitai" role="tabpanel">
-                <h3>CivitAI Model Downloader</h3>
-                <form id="civitaiForm" method="POST" action="/download_civitai">
+                <h3>Download CivitAI Models</h3>
+                <p>Download models directly from CivitAI.</p>
+                
+                <form id="civitaiDownloadForm">
                     <div class="mb-3">
-                        <label for="civitaiUrl" class="form-label">Model URL</label>
-                        <input type="url" class="form-control" id="civitaiUrl" name="url" required>
+                        <label for="civitaiUrl" class="form-label">CivitAI URL</label>
+                        <input type="text" class="form-control" id="civitaiUrl" placeholder="Enter CivitAI model URL">
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="modelType" class="form-label">Model Type</label>
-                        <select class="form-select" id="modelType" name="model_type" required>
-                            <option value="lora">Lora</option>
+                        <label for="civitaiModelType" class="form-label">Model Type</label>
+                        <select class="form-select" id="civitaiModelType">
+                            <option value="lora">LoRA</option>
                             <option value="checkpoint">Checkpoint</option>
+                            <option value="vae">VAE</option>
                         </select>
                     </div>
+                    
                     <div class="mb-3">
-                        <label for="filename" class="form-label">Filename</label>
-                        <input type="text" class="form-control" id="filename" name="filename" required>
+                        <label for="civitaiFilename" class="form-label">Filename</label>
+                        <input type="text" class="form-control" id="civitaiFilename" placeholder="Enter filename">
                     </div>
+                    
                     <div class="mb-3">
                         <label for="civitaiToken" class="form-label">CivitAI Token (optional)</label>
-                        <input type="text" class="form-control" id="civitaiToken" name="token">
+                        <input type="text" class="form-control" id="civitaiToken" placeholder="Enter your CivitAI token">
                     </div>
-                    <button type="submit" class="btn btn-primary">Download</button>
-                    <button type="button" class="btn btn-danger" id="stopCivitai">Stop Download</button>
+                    
+                    <button type="submit" class="btn btn-primary" id="civitaiDownloadBtn">Download</button>
+                    <button type="button" class="btn btn-danger" id="stopCivitaiDownload">Stop Download</button>
                 </form>
-                <div id="civitaiStatus" class="status-message"></div>
-                <div class="progress-info">
-                    <div class="progress">
+                
+                <div id="civitaiProgressSection" class="mt-4">
+                    <div id="civitaiStatus" class="status-message"></div>
+                    <div class="progress mt-2">
                         <div id="civitaiProgress" class="progress-bar" role="progressbar" style="width: 0%"></div>
                     </div>
                     <div class="mt-2">
@@ -372,319 +451,414 @@
                 </div>
             </div>
 
-            <!-- HuggingFace Tab -->
+            <!-- HuggingFace Downloader Tab -->
             <div class="tab-pane fade" id="huggingface" role="tabpanel">
-                <h3>Download HuggingFace Models</h3>
-                <form id="hfForm" method="POST" action="/download_huggingface">
-                    {{ hf_form.csrf_token }}
+                <h3>Download from HuggingFace</h3>
+                <form id="hfForm">
                     <div class="mb-3">
-                        {{ hf_form.model_url.label(class="form-label") }}
-                        {{ hf_form.model_url(class="form-control", placeholder="https://huggingface.co/model-name") }}
+                        <label for="model_url" class="form-label">HuggingFace Model URL</label>
+                        <input type="text" class="form-control" id="model_url" name="model_url" required>
                     </div>
-                    {{ hf_form.submit(class="btn btn-primary") }}
+                    <div class="mb-3">
+                        <label for="token" class="form-label">HuggingFace Token (optional)</label>
+                        <input type="text" class="form-control" id="token" name="token">
+                        <div class="form-text">Required for private models or to bypass rate limits</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="download_path" class="form-label">Download Path (optional)</label>
+                        <input type="text" class="form-control" id="download_path" name="download_path">
+                        <div class="form-text">e.g., /workspace/ComfyUI/models/checkpoints</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="hfSubmit">Download</button>
+                    <button type="button" class="btn btn-danger d-none" id="hfStopButton">Stop Download</button>
                 </form>
-                <div id="hfStatus" class="status-message"></div>
+                
+                <!-- Progress section (initially hidden) -->
+                <div id="hfProgressSection" class="d-none">
+                    <div id="hfStatus" class="status-message"></div>
+                    <div class="progress mt-3">
+                        <div id="hfProgress" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="progress-stats">
+                        <span id="hfDownloaded">Downloaded: 0B</span>
+                        <span id="hfTotal">Total: 0B</span>
+                        <span id="hfSpeed">Speed: 0B/s</span>
+                        <span id="hfEta">ETA: Unknown</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <h5 class="mb-0">Log Output</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('hfLog').textContent = ''">Clear Log</button>
+                    </div>
+                    <div id="hfLog" class="log-container"></div>
+                    <button id="hfStopButton" class="btn btn-danger mt-3 d-none">Stop Download</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Handle Lora Training Form
-        document.getElementById('loraForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch('/install_training_tool', {
-                method: 'POST',
-                body: new FormData(this)
-            })
-            .then(response => response.json())
-            .then(data => {
-                const statusDiv = document.getElementById('loraStatus');
-                statusDiv.className = `status-message status-${data.status}`;
-                statusDiv.textContent = data.message;
+        // Global variables to store status update intervals
+        let huggingfaceStatusInterval = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all forms with AJAX submission
+            initHuggingFaceForm();
+        });
+        
+        function initHuggingFaceForm() {
+            const form = document.getElementById('hfForm');
+            const submitBtn = document.getElementById('hfSubmit');
+            const stopBtn = document.getElementById('hfStopButton');
+            const progressSection = document.getElementById('hfProgressSection');
+            const statusDiv = document.getElementById('hfStatus');
+            const progressBar = document.getElementById('hfProgress');
+            const downloadedText = document.getElementById('hfDownloaded');
+            const totalText = document.getElementById('hfTotal');
+            const speedText = document.getElementById('hfSpeed');
+            const etaText = document.getElementById('hfEta');
+            const logDiv = document.getElementById('hfLog');
+            
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(form);
+                submitBtn.disabled = true;
+                
+                fetch('/download_huggingface', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        statusDiv.textContent = data.message;
+                        statusDiv.className = 'status-message status-error';
+                        submitBtn.disabled = false;
+                    } else {
+                        // Show progress section
+                        progressSection.classList.remove('d-none');
+                        stopBtn.classList.remove('d-none');
+                        statusDiv.textContent = data.message;
+                        statusDiv.className = 'status-message status-success';
+                        logDiv.textContent += `${data.message}\n`;
+                        
+                        // Start status updates
+                        startHuggingFaceStatusUpdates();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    statusDiv.textContent = 'Error: ' + error.message;
+                    statusDiv.className = 'status-message status-error';
+                    submitBtn.disabled = false;
+                });
             });
-        });
+            
+            // Stop button handler
+            stopBtn.addEventListener('click', function() {
+                fetch('/stop_huggingface', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    statusDiv.textContent = 'Download stopped by user';
+                    statusDiv.className = 'status-message status-error';
+                    logDiv.textContent += 'Download stopped by user\n';
+                    stopHuggingFaceStatusUpdates();
+                    submitBtn.disabled = false;
+                    stopBtn.classList.add('d-none');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+            
+            function startHuggingFaceStatusUpdates() {
+                // Clear any existing interval
+                if (huggingfaceStatusInterval) {
+                    clearInterval(huggingfaceStatusInterval);
+                }
+                
+                // Start new status polling
+                huggingfaceStatusInterval = setInterval(function() {
+                    fetch('/huggingface_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        // Update UI with status data
+                        if (data.status === 'error') {
+                            // For error messages, use innerHTML with whitespace preservation
+                            statusDiv.innerHTML = data.message.replace(/\n/g, '<br>');
+                            statusDiv.style.whiteSpace = 'pre-wrap';
+                            statusDiv.style.textAlign = 'left';
+                        } else {
+                            statusDiv.textContent = data.message;
+                            statusDiv.style.whiteSpace = 'normal';
+                            statusDiv.style.textAlign = 'center';
+                        }
+                        
+                        progressBar.style.width = `${data.progress}%`;
+                        progressBar.setAttribute('aria-valuenow', data.progress);
+                        downloadedText.textContent = `Downloaded: ${data.downloaded}`;
+                        totalText.textContent = `Total: ${data.total}`;
+                        speedText.textContent = `Speed: ${data.speed}`;
+                        etaText.textContent = `ETA: ${data.eta}`;
+                        
+                        if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
+                            // Add to log
+                            logDiv.textContent += `${data.message}\n`;
+                            
+                            // Scroll to bottom of log
+                            logDiv.scrollTop = logDiv.scrollHeight;
+                            
+                            // Stop polling and enable submit button
+                            if (data.status === 'completed' || data.status === 'error') {
+                                stopHuggingFaceStatusUpdates();
+                                submitBtn.disabled = false;
+                                stopBtn.classList.add('d-none');
+                                
+                                // Update status message class
+                                statusDiv.className = data.status === 'completed' ? 
+                                    'status-message status-success' : 
+                                    'status-message status-error';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching status:', error);
+                    });
+                }, 1000);
+            }
+            
+            function stopHuggingFaceStatusUpdates() {
+                if (huggingfaceStatusInterval) {
+                    clearInterval(huggingfaceStatusInterval);
+                    huggingfaceStatusInterval = null;
+                }
+            }
+        }
 
-        // Handle Model Download Form
-        document.getElementById('modelDownloadForm').addEventListener('submit', function(e) {
+        // Handle CivitAI Download Form and Status Updates
+        document.getElementById('civitaiDownloadForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const selectedScripts = Array.from(document.querySelectorAll('.form-check-input:checked'))
-                .map(checkbox => checkbox.value);
             
-            if (selectedScripts.length === 0) {
-                const statusDiv = document.getElementById('modelStatus');
-                statusDiv.className = 'status-message status-error';
-                statusDiv.textContent = 'Please select at least one model to download';
-                return;
-            }
-
-            // Clear previous status and log
-            document.getElementById('modelStatus').className = 'status-message';
-            document.getElementById('modelStatus').textContent = '';
-            document.getElementById('modelLog').textContent = '';
-
-            // Download the first selected script
-            downloadNextScript(selectedScripts, 0);
-        });
-
-        function downloadNextScript(scripts, index) {
-            if (index >= scripts.length) {
-                return; // All scripts processed
-            }
-
-            const script = scripts[index];
-            const scriptLabel = document.querySelector(`label[for="script-${script}"]`).textContent;
+            const url = document.getElementById('civitaiUrl').value;
+            const modelType = document.getElementById('civitaiModelType').value;
+            const filename = document.getElementById('civitaiFilename').value;
+            const token = document.getElementById('civitaiToken').value;
             
-            fetch('/run_download_script', {
+            fetch('/download_civitai', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: `script_name=${script}`
+                body: `url=${encodeURIComponent(url)}&model_type=${encodeURIComponent(modelType)}&filename=${encodeURIComponent(filename)}&token=${encodeURIComponent(token)}`
             })
             .then(response => response.json())
             .then(data => {
-                const logDiv = document.getElementById('modelLog');
-                logDiv.textContent += `Starting download for ${scriptLabel}...\n`;
-                
-                if (data.status === 'error') {
-                    logDiv.textContent += `Error: ${data.message}\n`;
-                    // Try the next script
-                    downloadNextScript(scripts, index + 1);
-                } else {
-                    logDiv.textContent += `${data.message}\n`;
-                    // Start monitoring status for this script
-                    startModelStatusUpdates(scripts, index);
-                }
-                
-                // Scroll to bottom of log
-                logDiv.scrollTop = logDiv.scrollHeight;
-            });
-        }
-
-        function startModelStatusUpdates(scripts, currentIndex) {
-            let prevDownloaded = '';
-            let prevProgress = 0;
-            let prevMessage = '';
-            let lastUpdateTime = Date.now();
-            
-            const statusInterval = setInterval(function() {
-                fetch('/model_status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusDiv = document.getElementById('modelStatus');
-                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
-                    statusDiv.textContent = data.message;
-
-                    // Always update the progress bar and status information
-                    document.getElementById('modelProgress').style.width = `${data.progress}%`;
-                    document.getElementById('modelDownloaded').textContent = `Downloaded: ${data.downloaded}`;
-                    document.getElementById('modelTotal').textContent = data.total;
-                    document.getElementById('modelSpeed').textContent = data.speed;
-                    document.getElementById('modelEta').textContent = data.eta;
-
-                    const logDiv = document.getElementById('modelLog');
-                    const currentTime = Date.now();
-                    const timeElapsed = currentTime - lastUpdateTime;
-                    
-                    // Only update log if:
-                    // 1. Downloaded size changed, or
-                    // 2. Progress changed by at least 1%, or
-                    // 3. At least 5 seconds passed since last update
-                    if (data.status === 'downloading' && data.progress > 0 && 
-                        (data.downloaded !== prevDownloaded || 
-                         Math.abs(data.progress - prevProgress) >= 1 ||
-                         timeElapsed > 5000)) {
-                        
-                        // Store the current values for future comparison
-                        prevDownloaded = data.downloaded;
-                        prevProgress = data.progress;
-                        prevMessage = data.message;
-                        lastUpdateTime = currentTime;
-                        
-                        // Create a formatted progress message
-                        const progressMsg = `${data.message} (${data.downloaded}/${data.total}, ${data.speed})`;
-                        
-                        // Update the log with new information
-                        const lines = logDiv.textContent.split('\n');
-                        
-                        // If the last non-empty line was a progress update, replace it
-                        let replaced = false;
-                        for (let i = lines.length - 1; i >= 0; i--) {
-                            if (lines[i].trim() !== '' && lines[i].includes('Downloading')) {
-                                lines[i] = progressMsg;
-                                replaced = true;
-                                break;
-                            }
-                        }
-                        
-                        if (!replaced) {
-                            // No previous progress line found, add a new one
-                            logDiv.textContent += progressMsg + '\n';
-                        } else {
-                            // Update with modified lines
-                            logDiv.textContent = lines.join('\n');
-                        }
-                    } else if (data.status !== 'downloading' && data.message !== prevMessage) {
-                        // For non-progress messages (errors, completion, etc.)
-                        prevMessage = data.message;
-                        logDiv.textContent += `${data.message}\n`;
-                    }
-
-                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
-                        clearInterval(statusInterval);
-                        
-                        // Add final message if not already added
-                        if (!logDiv.textContent.includes(data.message)) {
-                            logDiv.textContent += `${data.message}\n`;
-                        }
-                        
-                        // Move to the next script after a brief delay
-                        setTimeout(() => {
-                            downloadNextScript(scripts, currentIndex + 1);
-                        }, 2000);
-                    }
-                    
-                    // Scroll to bottom of log
-                    logDiv.scrollTop = logDiv.scrollHeight;
-                });
-            }, 500); // Check more frequently (every 500ms instead of 1000ms)
-        }
-
-        // Stop model download button
-        document.getElementById('stopModelDownload').addEventListener('click', function() {
-            fetch('/stop_model_download', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                const statusDiv = document.getElementById('modelStatus');
-                statusDiv.className = 'status-message status-info';
-                statusDiv.textContent = 'Download stopped';
-                
-                const logDiv = document.getElementById('modelLog');
-                logDiv.textContent += 'Download stopped by user\n';
-                logDiv.scrollTop = logDiv.scrollHeight;
-            });
-        });
-
-        // Clear log button
-        document.getElementById('clearLog').addEventListener('click', function() {
-            document.getElementById('modelLog').textContent = '';
-        });
-
-        // Handle Flux Download Form and Status Updates
-        document.getElementById('fluxForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch('/download_flux', {
-                method: 'POST',
-                body: new FormData(this)
+                const statusDiv = document.getElementById('civitaiStatus');
+                statusDiv.textContent = data.message || 'Starting download...';
+                startCivitaiStatusUpdates();
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    const statusDiv = document.getElementById('fluxStatus');
-                    statusDiv.className = 'status-message status-error';
-                    statusDiv.textContent = data.error;
-                } else {
-                    startFluxStatusUpdates();
-                }
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('civitaiStatus').textContent = 'Error starting download';
             });
         });
 
-        document.getElementById('stopFlux').addEventListener('click', function() {
-            fetch('/stop_flux', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                const statusDiv = document.getElementById('fluxStatus');
-                statusDiv.className = 'status-message status-info';
-                statusDiv.textContent = 'Download stopped';
-            });
-        });
-
-        function startFluxStatusUpdates() {
-            const statusInterval = setInterval(function() {
-                fetch('/flux_status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusDiv = document.getElementById('fluxStatus');
-                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
-                    statusDiv.textContent = data.message;
-
-                    document.getElementById('fluxProgress').style.width = `${data.progress}%`;
-                    document.getElementById('fluxDownloaded').textContent = `Downloaded: ${data.downloaded}`;
-                    document.getElementById('fluxTotal').textContent = data.total;
-                    document.getElementById('fluxSpeed').textContent = data.speed;
-                    document.getElementById('fluxEta').textContent = data.eta;
-
-                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
-                        clearInterval(statusInterval);
-                    }
-                });
-            }, 1000);
-        }
-
-        // Handle CivitAI Download Form and Status Updates
-        document.getElementById('civitaiForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch('/download_civitai', {
-                method: 'POST',
-                body: new FormData(this)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    const statusDiv = document.getElementById('civitaiStatus');
-                    statusDiv.className = 'status-message status-error';
-                    statusDiv.textContent = data.error;
-                } else {
-                    startCivitaiStatusUpdates();
-                }
-            });
-        });
-
-        document.getElementById('stopCivitai').addEventListener('click', function() {
+        document.getElementById('stopCivitaiDownload').addEventListener('click', function() {
             fetch('/stop_civitai', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
                 const statusDiv = document.getElementById('civitaiStatus');
-                statusDiv.className = 'status-message status-info';
-                statusDiv.textContent = 'Download stopped';
+                statusDiv.textContent = 'Download stopped by user';
+            })
+            .catch(error => {
+                console.error('Error:', error);
             });
         });
 
         function startCivitaiStatusUpdates() {
-            const statusInterval = setInterval(function() {
-                fetch('/civitai_status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusDiv = document.getElementById('civitaiStatus');
-                    statusDiv.className = `status-message status-${data.status === 'error' ? 'error' : 'success'}`;
-                    statusDiv.textContent = data.message;
-
-                    document.getElementById('civitaiProgress').style.width = `${data.progress}%`;
-                    document.getElementById('civitaiDownloaded').textContent = `Downloaded: ${data.downloaded}`;
-                    document.getElementById('civitaiTotal').textContent = data.total;
-                    document.getElementById('civitaiSpeed').textContent = data.speed;
-                    document.getElementById('civitaiEta').textContent = data.eta;
-
-                    if (data.status === 'completed' || data.status === 'error' || data.status === 'stopped') {
-                        clearInterval(statusInterval);
-                    }
-                });
-            }, 1000);
+            fetch('/civitai_status')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('civitaiStatus');
+                statusDiv.textContent = data.message;
+                
+                document.getElementById('civitaiProgress').style.width = `${data.progress}%`;
+                document.getElementById('civitaiDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                document.getElementById('civitaiTotal').textContent = data.total;
+                document.getElementById('civitaiSpeed').textContent = data.speed;
+                document.getElementById('civitaiEta').textContent = data.eta;
+                
+                if (data.status === 'downloading') {
+                    setTimeout(startCivitaiStatusUpdates, 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
         }
 
-        // Handle HuggingFace Form
-        document.getElementById('hfForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            fetch('/download_huggingface', {
+        // Handle Preset Model Downloads
+        function runDownloadScript(scriptName, form) {
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            
+            fetch('/run_download_script', {
                 method: 'POST',
-                body: new FormData(this)
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
-                const statusDiv = document.getElementById('hfStatus');
-                statusDiv.className = `status-message status-${data.status}`;
+                if (data.status === 'error') {
+                    document.getElementById('presetStatus').textContent = data.message;
+                    document.getElementById('presetStatus').className = 'status-message status-error';
+                    submitBtn.disabled = false;
+                } else {
+                    startPresetStatusUpdates();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('presetStatus').textContent = 'Error starting download';
+                document.getElementById('presetStatus').className = 'status-message status-error';
+                submitBtn.disabled = false;
+            });
+            
+            return false;
+        }
+
+        function startPresetStatusUpdates() {
+            fetch('/model_status')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('presetStatus');
                 statusDiv.textContent = data.message;
+                statusDiv.className = data.status === 'error' ? 'status-message status-error' : 'status-message status-success';
+
+                document.getElementById('presetProgress').style.width = `${data.progress}%`;
+                document.getElementById('presetDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                document.getElementById('presetTotal').textContent = data.total;
+                document.getElementById('presetSpeed').textContent = data.speed;
+                document.getElementById('presetEta').textContent = data.eta;
+
+                if (data.status === 'downloading') {
+                    setTimeout(startPresetStatusUpdates, 1000);
+                } else if (data.status === 'completed' || data.status === 'error') {
+                    // Re-enable all download buttons
+                    document.querySelectorAll('form button[type="submit"]').forEach(btn => {
+                        btn.disabled = false;
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Handle Training Tools Form
+        document.getElementById('trainingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            
+            fetch('/install_training_tool', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('trainingStatus');
+                statusDiv.textContent = data.message;
+                statusDiv.className = data.status === 'error' ? 'status-message status-error' : 'status-message status-success';
+                submitBtn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('trainingStatus').textContent = 'Error installing tool';
+                document.getElementById('trainingStatus').className = 'status-message status-error';
+                submitBtn.disabled = false;
+            });
+        });
+
+        // Handle model checkboxes and token field
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxes = document.querySelectorAll('.model-checkbox');
+            const tokenContainer = document.getElementById('tokenInputContainer');
+            const downloadButton = document.getElementById('downloadSelectedBtn');
+            const tokenInput = document.getElementById('hfToken');
+            
+            function updateTokenFieldVisibility() {
+                const checkedModels = Array.from(checkboxes).filter(cb => cb.checked);
+                const requiresToken = checkedModels.some(cb => cb.dataset.requiresToken === 'true');
+                
+                if (requiresToken) {
+                    tokenContainer.classList.remove('d-none');
+                } else {
+                    tokenContainer.classList.add('d-none');
+                }
+            }
+            
+            function updateDownloadButton() {
+                const checkedModels = Array.from(checkboxes).filter(cb => cb.checked);
+                const requiresToken = checkedModels.some(cb => cb.dataset.requiresToken === 'true');
+                const hasToken = tokenInput.value.trim() !== '';
+                
+                downloadButton.disabled = checkedModels.length === 0 || (requiresToken && !hasToken);
+            }
+            
+            // Add event listeners to checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateTokenFieldVisibility();
+                    updateDownloadButton();
+                });
+            });
+
+            // Add event listener to token input
+            tokenInput.addEventListener('input', updateDownloadButton);
+            
+            // Add event listener to download button
+            downloadButton.addEventListener('click', function() {
+                const checkedModels = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.dataset.scriptId);
+                const token = tokenInput.value.trim();
+                
+                if (checkedModels.length === 0) return;
+                
+                const formData = new FormData();
+                formData.append('script_names', JSON.stringify(checkedModels));
+                if (token) {
+                    formData.append('token', token);
+                }
+                
+                this.disabled = true;
+                
+                fetch('/run_download_script', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        document.getElementById('presetStatus').textContent = data.message;
+                        document.getElementById('presetStatus').className = 'status-message status-error';
+                        this.disabled = false;
+                    } else {
+                        startPresetStatusUpdates();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('presetStatus').textContent = 'Error starting download';
+                    document.getElementById('presetStatus').className = 'status-message status-error';
+                    this.disabled = false;
+                });
             });
         });
     </script>

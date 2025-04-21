@@ -1,6 +1,6 @@
 #!/bin/bash
 # Model: Native Wan2.1 I2V 720p
-
+# Requires-HF-Token: false
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 
 # Create output directory if it doesn't exist

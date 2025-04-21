@@ -1,5 +1,6 @@
 #!/bin/bash
 # Model: Native Wan2.1 T2V 14B
+# Requires-HF-Token: false  
 
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 

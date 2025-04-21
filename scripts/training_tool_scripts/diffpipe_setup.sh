@@ -1,3 +1,7 @@
+#!/bin/bash
+# Tool: Diffusion Pipe
+# Description: Training tool for Wan, Hidream, Hunyuan, and LTX Loras
+
 # Set up diffusion-pipe-ui
 echo "Setting up diffusion-pipe-ui..."
 cd /workspace

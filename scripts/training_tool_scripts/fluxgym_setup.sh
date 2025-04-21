@@ -1,3 +1,7 @@
+#!/bin/bash
+# Tool: FluxGym
+# Description: Training tool for Flux Loras with advanced features and optimizations
+
 # Create workspace directory if it doesn't exist
 cd /workspace
 

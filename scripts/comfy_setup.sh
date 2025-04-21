@@ -5,6 +5,7 @@ git clone https://github.com/comfyanonymous/ComfyUI.git
 cd ComfyUI
 python3.12 -m venv comfyui_venv
 ./comfyui_venv/bin/python -m pip install --upgrade pip -qq
+echo "Installing ComfyUI requirements, this may take up to 5mins..."
 ./comfyui_venv/bin/pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 -qq
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
