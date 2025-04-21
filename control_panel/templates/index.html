@@ -372,6 +372,7 @@
 
                 <div class="mt-3">
                     <button type="button" class="btn btn-primary" id="downloadSelectedBtn" disabled>Download Selected Models</button>
+                    <button type="button" class="btn btn-danger ms-2" id="stopDownloadBtn" style="display: none;">Stop Download</button>
                 </div>
 
                 <div id="presetProgressSection" class="mt-4">
@@ -790,6 +791,7 @@
             const checkboxes = document.querySelectorAll('.model-checkbox');
             const tokenContainer = document.getElementById('tokenInputContainer');
             const downloadButton = document.getElementById('downloadSelectedBtn');
+            const stopButton = document.getElementById('stopDownloadBtn');
             const tokenInput = document.getElementById('hfToken');
             
             function updateTokenFieldVisibility() {
@@ -838,6 +840,7 @@
                 }
                 
                 this.disabled = true;
+                stopButton.style.display = 'inline-block';
                 
                 fetch('/run_download_script', {
                     method: 'POST',
@@ -849,6 +852,7 @@
                         document.getElementById('presetStatus').textContent = data.message;
                         document.getElementById('presetStatus').className = 'status-message status-error';
                         this.disabled = false;
+                        stopButton.style.display = 'none';
                     } else {
                         startPresetStatusUpdates();
                     }
@@ -858,6 +862,24 @@
                     document.getElementById('presetStatus').textContent = 'Error starting download';
                     document.getElementById('presetStatus').className = 'status-message status-error';
                     this.disabled = false;
+                    stopButton.style.display = 'none';
+                });
+            });
+
+            // Add event listener to stop button
+            stopButton.addEventListener('click', function() {
+                fetch('/stop_model_download', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('presetStatus').textContent = 'Download stopped by user';
+                    document.getElementById('presetStatus').className = 'status-message status-error';
+                    downloadButton.disabled = false;
+                    stopButton.style.display = 'none';
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                 });
             });
         });
