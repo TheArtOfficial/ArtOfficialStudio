@@ -1,0 +1,10 @@
+resolutions = [ 512,]
+enable_ar_bucket = true
+min_ar = 0.5
+max_ar = 2
+num_ar_buckets = 7
+frame_buckets = [ 1, 33,]
+[[directory]]
+path = "workspace/datasets/test2"
+num_repeats = 10
+

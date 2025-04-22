@@ -6,24 +6,36 @@ import gradio as gr
 import os
 from datetime import datetime, timedelta
 import json
-import torch
-import deepspeed
-from deepspeed import comm as dist
-import torch.multiprocessing
-from utils.patches import apply_patches
-import multiprocess as mp
+# import torch
+# import deepspeed
+# from deepspeed import comm as dist
+# import torch.multiprocessing
+# from utils.patches import apply_patches
+# import multiprocess as mp
 import argparse
 import toml
 import shutil
 import zipfile
 import tempfile
 import time
+from pathlib import Path
+import re
+
+DOCKER_DEV = os.environ.get('DOCKER_DEV', 'false').lower() == 'true'
+
+# Directory paths - adjust based on environment
+if DOCKER_DEV:
+    BASE_PATH = Path("/workspace")
+    SCRIPT_PATH = Path("/scripts")
+else:
+    BASE_PATH = Path("workspace")
+    SCRIPT_PATH = Path("scripts")
 
 # Working directories
-MODEL_DIR = "/workspace/models"
-BASE_DATASET_DIR = "/workspace/datasets"
-OUTPUT_DIR = "/workspace/outputs"
-CONFIG_DIR = "/workspace/configs"
+MODEL_DIR = BASE_PATH / "models"
+BASE_DATASET_DIR = BASE_PATH / "datasets"
+OUTPUT_DIR = BASE_PATH / "outputs"
+CONFIG_DIR = BASE_PATH / "configs"
 
 # Maximum number of media to display in the gallery
 MAX_MEDIA = 50
@@ -126,6 +138,7 @@ def create_training_config(
     gradient_accumulation_steps: int,
     gradient_clipping: float,
     warmup_steps: int,
+    blocks_to_swap: int,
     eval_every: int,
     eval_before_first_step: bool,
     eval_micro_batch_size_per_gpu: int,
@@ -140,20 +153,23 @@ def create_training_config(
     video_clip_mode: str,
     
     # Model parameters
+    model_type: str,
     transformer_path: str,
     vae_path: str,
     llm_path: str,
     clip_path: str,
-    dtype: str = "float16",
+    dtype: str,
+    transformer_dtype: str,
     
     # Adapter parameters
+    lora_dtype: str,
     rank: int = 8,
     only_double_blocks: bool = False,
     
     # Optimizer parameters
     optimizer_type: str = "adamw_optimi",
     lr: float = 1e-4,
-    betas: str = "(0.9, 0.999)",
+    betas: str = "(0.9, 0.99)",
     weight_decay: float = 0.01,
     eps: float = 1e-8,
     
@@ -177,6 +193,7 @@ def create_training_config(
         "gradient_accumulation_steps": gradient_accumulation_steps,
         "gradient_clipping": gradient_clipping,
         "warmup_steps": warmup_steps,
+        "blocks_to_swap": blocks_to_swap,
         "eval_every_n_epochs": eval_every,
         "eval_before_first_step": eval_before_first_step,
         "eval_micro_batch_size_per_gpu": eval_micro_batch_size_per_gpu,
@@ -192,20 +209,20 @@ def create_training_config(
         "pipeline_stages": num_gpus,
         # Model configuration with fixed type and sampling method
         "model": {
-            "type": "hunyuan-video",
+            "type": model_type,
             "transformer_path": transformer_path,
             "vae_path": vae_path,
             "llm_path": llm_path,
             "clip_path": clip_path,
             "dtype": dtype,
-            "transformer_dtype": "float8",
+            "transformer_dtype": transformer_dtype,
             "timestep_sample_method": "logit_normal"
         },
         # Adapter configuration with fixed type
         "adapter": {
             "type": "lora",
             "rank": rank,
-            "dtype": dtype,
+            "lora_dtype": lora_dtype,
             "only_double_blocks": only_double_blocks
         },
         # Optimizer configuration with evaluated betas
@@ -284,7 +301,9 @@ def extract_config_values(config):
     eval_every = config.get("eval_every_n_epochs", 1)
     rank = config.get("adapter", {}).get("rank", 32)
     only_double_blocks = config.get("adapter", {}).get("only_double_blocks", False)
-    dtype = config.get("adapter", {}).get("dtype", "bfloat16")
+    lora_dtype = config.get("adapter", {}).get("lora_dtype", "bfloat16")
+    dtype = config.get("model", {}).get("dtype", "bfloat16")
+    transformer_dtype = config.get("model", {}).get("transformer_dtype", "float8")
     transformer_path = config.get("model", {}).get("transformer_path", "/workspace/models/hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors")
     vae_path = config.get("model", {}).get("vae_path", "/workspace/models/hunyuan_video_vae_fp32.safetensors")
     llm_path = config.get("model", {}).get("llm_path", "/workspace/models/llava-llama-3-8b-text-encoder-tokenizer")
@@ -301,9 +320,10 @@ def extract_config_values(config):
     max_ar = config.get("dataset", {}).get("max_ar", 2.0)
     num_ar_buckets = config.get("dataset", {}).get("num_ar_buckets", 7)
     ar_buckets = config.get("dataset", {}).get("ar_buckets", None)
-    frame_buckets = config.get("dataset", {}).get("frame_buckets", [1, 33, 65])
+    frame_buckets = config.get("dataset", {}).get("frame_buckets", [1, 33])
     gradient_clipping = config.get("gradient_clipping", 1.0)
     warmup_steps = config.get("warmup_steps", 100)
+    blocks_to_swap = config.get("blocks_to_swap", 0)
     eval_before_first_step = config.get("eval_before_first_step", True)
     eval_micro_batch_size_per_gpu = config.get("eval_micro_batch_size_per_gpu", 1)
     eval_gradient_accumulation_steps = config.get("eval_gradient_accumulation_steps", 1)
@@ -335,6 +355,8 @@ def extract_config_values(config):
         "rank": rank,
         "only_double_blocks": only_double_blocks,
         "dtype": dtype,
+        "transformer_dtype": transformer_dtype,
+        "lora_dtype": lora_dtype,
         "transformer_path": transformer_path,
         "vae_path": vae_path,
         "llm_path": llm_path,
@@ -345,15 +367,16 @@ def extract_config_values(config):
         "eps": eps,
         "gradient_accumulation_steps": gradient_accumulation_steps,
         "num_repeats": num_repeats,
-        "resolutions_input": resolutions_str,
+        "resolutions": resolutions_str,
         "enable_ar_bucket": enable_ar_bucket,
         "min_ar": min_ar,
         "max_ar": max_ar,
         "num_ar_buckets": num_ar_buckets,
-        "ar_buckets": ar_buckets_str,
         "frame_buckets": frame_buckets_str,
+        "ar_buckets": ar_buckets_str,
         "gradient_clipping": gradient_clipping,
         "warmup_steps": warmup_steps,
+        "blocks_to_swap": blocks_to_swap,
         "eval_before_first_step": eval_before_first_step,
         "eval_micro_batch_size_per_gpu": eval_micro_batch_size_per_gpu,
         "eval_gradient_accumulation_steps": eval_gradient_accumulation_steps,
@@ -459,9 +482,9 @@ def toggle_dataset_option(option):
             gr.update(visible=False),     # Hide Upload Files Button
         )
 
-def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, dtype,
-                transformer_path, vae_path, llm_path, clip_path, optimizer_type, betas, weight_decay, eps,
-                gradient_accumulation_steps, num_repeats, resolutions, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
+def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+                transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+                gradient_accumulation_steps, num_repeats, resolutions, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
                 ):
     try:
         # Validate inputs
@@ -519,26 +542,15 @@ def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, sa
             dataset_config_path=dataset_config_path,
             epochs=epochs,
             batch_size=batch_size,
-            lr=lr,
-            save_every=save_every,
-            eval_every=eval_every,
-            rank=rank,
-            only_double_blocks=only_double_blocks,
-            dtype=dtype,
-            transformer_path=transformer_path,
-            vae_path=vae_path,
-            llm_path=llm_path,
-            clip_path=clip_path,
-            optimizer_type=optimizer_type,
-            betas=betas,
-            weight_decay=weight_decay,
-            eps=eps,
             gradient_accumulation_steps=gradient_accumulation_steps,
             gradient_clipping=gradient_clipping,
             warmup_steps=warmup_steps,
+            blocks_to_swap=blocks_to_swap,
+            eval_every=eval_every,
             eval_before_first_step=eval_before_first_step,
             eval_micro_batch_size_per_gpu=eval_micro_batch_size_per_gpu,
             eval_gradient_accumulation_steps=eval_gradient_accumulation_steps,
+            save_every=save_every,
             checkpoint_every_n_minutes=checkpoint_every_n_minutes,
             activation_checkpointing=activation_checkpointing,
             partition_method=partition_method,
@@ -546,24 +558,37 @@ def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, sa
             caching_batch_size=caching_batch_size,
             steps_per_print=steps_per_print,
             video_clip_mode=video_clip_mode,
+            model_type=model_type.value,
+            transformer_path=transformer_path,
+            vae_path=vae_path,
+            llm_path=llm_path,
+            clip_path=clip_path,
+            dtype=dtype,
+            transformer_dtype=transformer_dtype,
+            lora_dtype=lora_dtype,
+            rank=rank,
+            only_double_blocks=only_double_blocks,
+            optimizer_type=optimizer_type,
+            lr=lr,
+            betas=betas,
+            weight_decay=weight_decay,
+            eps=eps,
             enable_wandb=enable_wandb,
             wandb_run_name=wandb_run_name,
             wandb_tracker_name=wandb_tracker_name,
             wandb_api_key=wandb_api_key
         )
 
-        conda_activate_path = "/opt/conda/etc/profile.d/conda.sh"
-        conda_env_name = "pyenv"
+        venv_activate_path = "/workspace/diffusion-pipe/diffpipe_venv/bin/activate"
         num_gpus = os.getenv("NUM_GPUS", "1")
         
-        if not os.path.isfile(conda_activate_path):
-            return "Error: Conda activation script not found", None
+        if not os.path.isfile(venv_activate_path):
+            return "Error: venv activation script not found", None
         
         resume_checkpoint =  "--resume_from_checkpoint" if resume_from_checkpoint else ""
         
         cmd = (
-            f"bash -c 'source {conda_activate_path} && "
-            f"conda activate {conda_env_name} && "
+            f"bash -c 'source {venv_activate_path} && "
             f"NCCL_P2P_DISABLE=1 NCCL_IB_DISABLE=1 {'NCCL_SHM_DISABLE=1' if int(num_gpus) > 1 else ''} deepspeed --num_gpus={num_gpus} "
             f"train.py --deepspeed --config {training_config_path} {resume_checkpoint}'"          
         )
@@ -711,6 +736,7 @@ def update_ui_with_config(config_values):
         "rank": 32,
         "only_double_blocks": False,
         "dtype": "bfloat16",
+        "transformer_dtype": "float8",
         "transformer_path": "",
         "vae_path": "",
         "llm_path": "",
@@ -730,6 +756,7 @@ def update_ui_with_config(config_values):
         "frame_buckets": json.dumps([1, 33]),
         "gradient_clipping": 1.0,
         "warmup_steps": 100,
+        "blocks_to_swap": 30,
         "eval_before_first_step": True,
         "eval_micro_batch_size_per_gpu": 1,
         "eval_gradient_accumulation_steps": 1,
@@ -758,8 +785,10 @@ def update_ui_with_config(config_values):
         save_every = get_value("save_every")
         eval_every = get_value("eval_every")
         rank = get_value("rank")
+        lora_dtype = get_value("lora_dtype")
         only_double_blocks = get_value("only_double_blocks")
         dtype = get_value("dtype")
+        transformer_dtype = get_value("transformer_dtype")
         transformer_path = get_value("transformer_path")
         vae_path = get_value("vae_path")
         llm_path = get_value("llm_path")
@@ -779,6 +808,7 @@ def update_ui_with_config(config_values):
         frame_buckets = get_value("frame_buckets")
         gradient_clipping = get_value("gradient_clipping")
         warmup_steps = get_value("warmup_steps")
+        blocks_to_swap = get_value("blocks_to_swap")
         eval_before_first_step = get_value("eval_before_first_step")
         eval_micro_batch_size_per_gpu = get_value("eval_micro_batch_size_per_gpu")
         eval_gradient_accumulation_steps = get_value("eval_gradient_accumulation_steps")
@@ -801,9 +831,11 @@ def update_ui_with_config(config_values):
         lr = defaults["lr"]
         save_every = defaults["save_every"]
         eval_every = defaults["eval_every"]
+        lora_dtype = defaults["lora_dtype"]
         rank = defaults["rank"]
         only_double_blocks = defaults["only_double_blocks"]
         dtype = defaults["dtype"]
+        transformer_dtype = defaults["transformer_dtype"]
         transformer_path = defaults["transformer_path"]
         vae_path = defaults["vae_path"]
         llm_path = defaults["llm_path"]
@@ -823,6 +855,7 @@ def update_ui_with_config(config_values):
         frame_buckets = defaults["frame_buckets"]
         gradient_clipping = defaults["gradient_clipping"]
         warmup_steps = defaults["warmup_steps"]
+        blocks_to_swap = defaults["blocks_to_swap"]
         eval_before_first_step = defaults["eval_before_first_step"]
         eval_micro_batch_size_per_gpu = defaults["eval_micro_batch_size_per_gpu"]
         eval_gradient_accumulation_steps = defaults["eval_gradient_accumulation_steps"]
@@ -844,9 +877,11 @@ def update_ui_with_config(config_values):
         lr,
         save_every,
         eval_every,
+        lora_dtype,
         rank,
         only_double_blocks,
         dtype,
+        transformer_dtype,
         transformer_path,
         vae_path,
         llm_path,
@@ -866,6 +901,7 @@ def update_ui_with_config(config_values):
         frame_buckets,
         gradient_clipping,
         warmup_steps,
+        blocks_to_swap,
         eval_before_first_step,
         eval_micro_batch_size_per_gpu,
         eval_gradient_accumulation_steps,
@@ -1092,6 +1128,187 @@ def get_selected_file(file_paths):
 
     return None, "Invalid or no file selected."
 
+def parse_model_configs():
+    """Parse model configurations from download scripts."""
+    configs = {}
+    scripts_dir = os.path.join(SCRIPT_PATH, "download_training_transformers")
+    
+    if not os.path.exists(scripts_dir):
+        print(f"Warning: Scripts directory not found at {scripts_dir}")
+        return configs
+        
+    for script in os.listdir(scripts_dir):
+        if script.endswith('.sh'):
+            script_path = os.path.join(scripts_dir, script)
+            try:
+                with open(script_path, 'r') as f:
+                    content = f.read()
+                    
+                # Extract JSON config from comments - match the exact format
+                match = re.search(r'# CONFIG:\s*#\s*{\s*#\s*([\s\S]*?)\s*#\s*}', content)
+                if match:
+                    try:
+                        # Clean up the matched JSON string
+                        json_str = match.group(1)
+                        # Remove comment markers and clean up the JSON
+                        json_str = re.sub(r'^\s*#\s*', '', json_str, flags=re.MULTILINE)
+                        json_str = re.sub(r'\s*#\s*$', '', json_str, flags=re.MULTILINE)
+                        json_str = re.sub(r',\s*#\s*', ',', json_str, flags=re.MULTILINE)
+                        json_str = re.sub(r'#\s*', '', json_str, flags=re.MULTILINE)
+                        json_str = '{' + json_str + '}'
+                        
+                        config = json.loads(json_str)
+                        
+                        # Add token requirement based on model type
+                        if config['model_type'] in ['flux', 'hidream']:
+                            config['requires_hf_token'] = True
+                        else:
+                            config['requires_hf_token'] = False
+                            
+                        # Ensure all paths are absolute
+                        for key, value in config.items():
+                            if isinstance(value, str) and key.endswith('_path'):
+                                if not os.path.isabs(value):
+                                    config[key] = os.path.join(BASE_PATH, value.lstrip('/'))
+                        configs[config['model_type']] = config
+                    except json.JSONDecodeError as e:
+                        print(f"Error parsing JSON in {script}: {str(e)}")
+                        print(f"JSON string was: {json_str}")
+            except Exception as e:
+                print(f"Error reading {script}: {str(e)}")
+                
+    return configs
+
+def get_model_types():
+    """Get list of available model types from download scripts."""
+    configs = parse_model_configs()
+    if not configs:
+        print("Warning: No model configurations found. Using default model types.")
+        default_types = ["hunyuan-video", "flux", "ltx-video", "wan-1.3b", "wan-14b", "wan-i2v", "hidream"]
+        return sorted(default_types)
+    return sorted(list(configs.keys()))
+
+def update_model_config(model_type):
+    """Update model configuration fields based on the selected model type."""
+    configs = parse_model_configs()
+    config = configs.get(model_type, {})
+    
+    # Default values for all fields
+    defaults = {
+        "transformer_path": None,
+        "vae_path": None,
+        "llm_path": None,
+        "clip_path": None,
+        "diffusers_path": None,
+        "single_file_path": None,
+        "checkpoint_path": None,
+        "text_encoder_path": None,
+        "llama3_path": None,
+        "dtype": "bfloat16",
+        "transformer_dtype": "float8",
+        "timestep_sample_method": "logit_normal",
+        "flux_shift": False,
+        "lumina_shift": False,
+        "unet_lr": 4e-5,
+        "text_encoder_1_lr": 2e-5,
+        "text_encoder_2_lr": 2e-5,
+        "llama3_4bit": False,
+        "max_llama3_sequence_length": 128
+    }
+    
+    # Update defaults with model-specific values
+    for key, value in config.items():
+        # Convert empty strings to None for path fields
+        if isinstance(value, str) and key.endswith('_path') and not value.strip():
+            defaults[key] = None
+        else:
+            defaults[key] = value
+    
+    return defaults
+
+def check_model_exists(model_type):
+    """Check if the model files exist based on the model type."""
+    configs = parse_model_configs()
+    config = configs.get(model_type, {})
+    
+    if not config:
+        return False
+        
+    # Check each path in the config
+    for key, path in config.items():
+        if key.endswith('_path') and path:
+            if not os.path.exists(path):
+                return False
+    return True
+
+def run_download_script(model_type, log_box, hf_token=None):
+    """Run the download script for the selected model type."""
+    script_path = os.path.join(SCRIPT_PATH, "download_training_transformers", f"download_{model_type.replace('-', '_')}.sh")
+    
+    if not os.path.exists(script_path):
+        return log_box + f"\nError: Download script not found for {model_type}", False
+        
+    try:
+        # Set environment variable if token is provided
+        env = os.environ.copy()
+        if hf_token:
+            env["HUGGINGFACE_TOKEN"] = hf_token
+            
+        proc = subprocess.Popen(
+            ["bash", script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True,
+            env=env
+        )
+        
+        # Read output in real-time
+        while True:
+            line = proc.stdout.readline()
+            if not line and proc.poll() is not None:
+                break
+            if line:
+                log_box += line
+                # Keep only last 200 lines
+                log_box = "\n".join(log_box.split("\n")[-200:])
+                
+        success = proc.returncode == 0
+        return log_box, success
+        
+    except Exception as e:
+        return log_box + f"\nError running download script: {str(e)}", False
+
+def handle_download_click(model_type, log_box, hf_token):
+    """Handle download button click."""
+    configs = parse_model_configs()
+    config = configs.get(model_type, {})
+    
+    # Check if token is required for this model
+    if config.get('requires_hf_token', False) and not hf_token:
+        return log_box, "HuggingFace token is required for this model. Please enter your token and try again."
+        
+    log_box += f"\nStarting download for {model_type}..."
+    log_box, success = run_download_script(model_type, log_box, hf_token)
+    
+    if success:
+        log_box += "\nDownload completed successfully!"
+        return log_box, "Model Downloaded! Train away"
+    else:
+        log_box += "\nDownload failed!"
+        return log_box, "Download failed. Please check logs and try again."
+
+def update_model_status(model_type):
+    """Update the model status text based on whether the model exists."""
+    if check_model_exists(model_type):
+        return "Model Downloaded! Train away"
+    return "Model not downloaded. Please download before training."
+
+def toggle_hf_token_visibility(model_type):
+    """Show/hide the HuggingFace token input based on model type."""
+    configs = parse_model_configs()
+    config = configs.get(model_type, {})
+    return gr.update(visible=config.get('requires_hf_token', False))
+
 # Gradio Interface
 with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     gr.Markdown("# LoRA Training Interface for Hunyuan Video")
@@ -1218,11 +1435,14 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                     "",  # Clear parameter values
                     f"Error loading configuration: {error}",
                     [],    # Clear gallery
-                    # gr.update(visible=False),    # Hide download button
                     gr.update(value=""),         # Clear download status
-                    {}
+                    {},    # Clear config values
+                    "hunyuan-video"  # Default model type
                 )
             config_values = extract_config_values(config)
+            
+            # Get model type from config
+            model_type = config.get("model", {}).get("type", "hunyuan-video")
             
             # Update config and output paths
             config_path = os.path.join(CONFIG_DIR, selected_dataset)
@@ -1234,11 +1454,11 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 output_path,   # Update output_dir
                 "",            # Clear error messages
                 show_media(dataset_path),  # Update gallery with dataset files
-                # gr.update(visible=True),    # Show download button
                 gr.update(value=""),        # Clear download status
-                config_values  # Update training parameters
+                config_values,  # Update training parameters
+                model_type     # Update model type
             )
-        return "", "", "", "No dataset selected.", [], gr.update(value=""), {} #, gr.update(visible=False), 
+        return "", "", "", "No dataset selected.", [], gr.update(value=""), {}, "hunyuan-video"  # Default model type
 
     with gr.Row():
         with gr.Column():
@@ -1298,27 +1518,151 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     gr.Markdown("#### Models Configurations")
     with gr.Row():
         with gr.Column():
+            model_type = gr.Dropdown(
+                choices=get_model_types(),
+                value="hunyuan-video",
+                label="Select Model",
+                interactive=True
+            )
+            
+            # Add HuggingFace token input
+            hf_token = gr.Textbox(
+                label="HuggingFace Token (required for some models)",
+                placeholder="Enter your HuggingFace token here",
+                type="password",
+                visible=False
+            )
+            
+            # Add download button and status
+            with gr.Row():
+                download_model_button = gr.Button("Download Model", visible=True)
+                model_status = gr.Textbox(
+                    label="Model Status",
+                    value="",
+                    interactive=False,
+                    visible=True
+                )
+            
+            # Common fields that might be used by multiple models
             transformer_path = gr.Textbox(
                 label="Transformer Path",
-                value=os.path.join(MODEL_DIR, "hunyuan_video_720_cfgdistill_fp8_e4m3fn.safetensors"),
-                info="Path to the transformer model weights for Hunyuan Video."
+                value="",
+                info="Path to the transformer model weights",
+                visible=False
             )
             vae_path = gr.Textbox(
                 label="VAE Path",
-                value=os.path.join(MODEL_DIR, "hunyuan_video_vae_fp32.safetensors"),
-                info="Path to the VAE model file."
+                value="",
+                info="Path to the VAE model file",
+                visible=False
             )
             llm_path = gr.Textbox(
                 label="LLM Path",
-                value=os.path.join(MODEL_DIR, "llava-llama-3-8b-text-encoder-tokenizer"),
-                info="Path to the LLM's text tokenizer and encoder."
+                value="",
+                info="Path to the LLM model",
+                visible=False
             )
             clip_path = gr.Textbox(
                 label="CLIP Path",
-                value=os.path.join(MODEL_DIR, "clip-vit-large-patch14"),
-                info="Path to the CLIP model directory."
+                value="",
+                info="Path to the CLIP model",
+                visible=False
+            )
+            diffusers_path = gr.Textbox(
+                label="Diffusers Path",
+                value="",
+                info="Path to the diffusers directory",
+                visible=False
+            )
+            single_file_path = gr.Textbox(
+                label="Single File Path",
+                value="",
+                info="Path to a single model file",
+                visible=False
+            )
+            checkpoint_path = gr.Textbox(
+                label="Checkpoint Path",
+                value="",
+                info="Path to the model checkpoint",
+                visible=False
+            )
+            text_encoder_path = gr.Textbox(
+                label="Text Encoder Path",
+                value="",
+                info="Path to the text encoder model",
+                visible=False
+            )
+            llama3_path = gr.Textbox(
+                label="LLaMA3 Path",
+                value="",
+                info="Path to the LLaMA3 model",
+                visible=False
             )
             
+            # Model-specific parameters
+            with gr.Row():
+                dtype = gr.Dropdown(
+                    label="Dtype",
+                    choices=["float32", "float16", "bfloat16", "float8"],
+                    value="bfloat16",
+                    visible=True,
+                    interactive=True
+                )
+                transformer_dtype = gr.Dropdown(
+                    label="Transformer Dtype",
+                    choices=["float32", "float16", "bfloat16", "float8", "nf4"],
+                    value="float8",
+                    visible=False
+                )
+                timestep_sample_method = gr.Dropdown(
+                    label="Timestep Sample Method",
+                    choices=["logit_normal", "uniform"],
+                    value="logit_normal",
+                    visible=False
+                )
+            
+            # Learning rates for SDXL
+            with gr.Row():
+                unet_lr = gr.Number(
+                    label="UNet Learning Rate",
+                    value=4e-5,
+                    visible=True
+                )
+                text_encoder_1_lr = gr.Number(
+                    label="Text Encoder 1 Learning Rate",
+                    value=2e-5,
+                    visible=True
+                )
+                text_encoder_2_lr = gr.Number(
+                    label="Text Encoder 2 Learning Rate",
+                    value=2e-5,
+                    visible=True
+                )
+            
+            # Special flags
+            with gr.Row():
+                flux_shift = gr.Checkbox(
+                    label="Flux Shift",
+                    value=False,
+                    visible=True
+                )
+                lumina_shift = gr.Checkbox(
+                    label="Lumina Shift",
+                    value=False,
+                    visible=True
+                )
+                llama3_4bit = gr.Checkbox(
+                    label="LLaMA3 4-bit",
+                    value=False,
+                    visible=True
+                )
+            
+            max_llama3_sequence_length = gr.Number(
+                label="Max LLaMA3 Sequence Length",
+                value=128,
+                visible=True
+            )
+
     gr.Markdown("### Step 2: Training\nConfigure your training parameters and start or stop the training process.")
     with gr.Column():
         gr.Markdown("#### Training Parameters")
@@ -1355,7 +1699,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 value=32,
                 info="LoRA adapter rank"
             )
-            dtype = gr.Dropdown(
+            lora_dtype = gr.Dropdown(
                 label="LoRA Dtype",
                 choices=['float32', 'float16', 'bfloat16', 'float8'],
                 value="bfloat16",
@@ -1459,6 +1803,14 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 value=100,
                 step=10,
                 info="Number of warmup steps"
+            )
+            blocks_to_swap = gr.Number(
+                label="Blocks to Swap",
+                value=0,
+                step=1,
+                minimum=0,
+                maximum=30,
+                info="Number of blocks to swap during training (0-30)"
             )
         with gr.Row():
             eval_before_first_step = gr.Checkbox(
@@ -1627,9 +1979,9 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
 
     
     def handle_train_click(
-        dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, dtype,
-        transformer_path, vae_path, llm_path, clip_path, optimizer_type, betas, weight_decay, eps,
-        gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
+        dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+        transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+        gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
     ):
         
         with process_lock:
@@ -1637,9 +1989,54 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 return "A training process is already running. Please stop it before starting a new one.", training_process_pid, gr.update(interactive=False)
             
         message, pid = train_model(
-            dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, dtype,
-            transformer_path, vae_path, llm_path, clip_path, optimizer_type, betas, weight_decay, eps,
-            gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
+            dataset_path=dataset_path,
+            config_dir=config_dir,
+            output_dir=output_dir,
+            epochs=epochs,
+            batch_size=batch_size,
+            lr=lr,
+            save_every=save_every,
+            eval_every=eval_every,
+            rank=rank,
+            lora_dtype=lora_dtype,
+            transformer_path=transformer_path,
+            vae_path=vae_path,
+            llm_path=llm_path,
+            clip_path=clip_path,
+            dtype=dtype,
+            transformer_dtype=transformer_dtype,
+            optimizer_type=optimizer_type,
+            betas=betas,
+            weight_decay=weight_decay,
+            eps=eps,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            num_repeats=num_repeats,
+            resolutions=resolutions_input,
+            enable_ar_bucket=enable_ar_bucket,
+            min_ar=min_ar,
+            max_ar=max_ar,
+            num_ar_buckets=num_ar_buckets,
+            frame_buckets=frame_buckets,
+            ar_buckets=ar_buckets,
+            gradient_clipping=gradient_clipping,
+            warmup_steps=warmup_steps,
+            blocks_to_swap=blocks_to_swap,
+            eval_before_first_step=eval_before_first_step,
+            eval_micro_batch_size_per_gpu=eval_micro_batch_size_per_gpu,
+            eval_gradient_accumulation_steps=eval_gradient_accumulation_steps,
+            checkpoint_every_n_minutes=checkpoint_every_n_minutes,
+            activation_checkpointing=activation_checkpointing,
+            partition_method=partition_method,
+            save_dtype=save_dtype,
+            caching_batch_size=caching_batch_size,
+            steps_per_print=steps_per_print,
+            video_clip_mode=video_clip_mode,
+            resume_from_checkpoint=resume_from_checkpoint,
+            only_double_blocks=only_double_blocks,
+            enable_wandb=enable_wandb,
+            wandb_run_name=wandb_run_name,
+            wandb_tracker_name=wandb_tracker_name,
+            wandb_api_key=wandb_api_key
         )
         
         if pid:
@@ -1758,10 +2155,10 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     train_click = train_button.click(
         fn=handle_train_click,
         inputs=[
-            dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, dtype,
-            transformer_path, vae_path, llm_path, clip_path, optimizer_type, betas, weight_decay, eps,
+            dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+            transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
             gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar,
-            num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, eval_before_first_step,
+            num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step,
             eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes,
             activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print,
             video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
@@ -1807,6 +2204,109 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
         outputs=download_zip
     )
     
+    # Add the model type change handler
+    def handle_model_type_change(model_type):
+        config = update_model_config(model_type)
+        
+        # Update visibility and values of all fields
+        return {
+            transformer_path: gr.update(
+                value=config["transformer_path"],
+                visible=config["transformer_path"] is not None,
+                interactive=True
+            ),
+            vae_path: gr.update(
+                value=config["vae_path"],
+                visible=config["vae_path"] is not None,
+                interactive=True
+            ),
+            llm_path: gr.update(
+                value=config["llm_path"],
+                visible=config["llm_path"] is not None,
+                interactive=True
+            ),
+            clip_path: gr.update(
+                value=config["clip_path"],
+                visible=config["clip_path"] is not None,
+                interactive=True
+            ),
+            diffusers_path: gr.update(
+                value=config["diffusers_path"],
+                visible=config["diffusers_path"] is not None,
+                interactive=True
+            ),
+            single_file_path: gr.update(
+                value=config["single_file_path"],
+                visible=config["single_file_path"] is not None,
+                interactive=True
+            ),
+            checkpoint_path: gr.update(
+                value=config["checkpoint_path"],
+                visible=config["checkpoint_path"] is not None,
+                interactive=True
+            ),
+            text_encoder_path: gr.update(
+                value=config["text_encoder_path"],
+                visible=config["text_encoder_path"] is not None,
+                interactive=True
+            ),
+            llama3_path: gr.update(
+                value=config["llama3_path"],
+                visible=config["llama3_path"] is not None,
+                interactive=True
+            ),
+            dtype: gr.update(
+                value=config["dtype"],
+                visible=True,
+                interactive=True
+            ),
+            transformer_dtype: gr.update(
+                value=config["transformer_dtype"],
+                visible=True,
+                interactive=True
+            ),
+            timestep_sample_method: gr.update(
+                value=config["timestep_sample_method"] if bool(config["timestep_sample_method"]) else "",
+                visible=bool(config["timestep_sample_method"]),
+                interactive=True
+            ),
+            unet_lr: gr.update(
+                value=config["unet_lr"] if model_type == "sdxl" else "",
+                visible=model_type == "sdxl",
+                interactive=True
+            ),
+            text_encoder_1_lr: gr.update(
+                value=config["text_encoder_1_lr"] if model_type == "sdxl" else "",
+                visible=model_type == "sdxl",
+                interactive=True
+            ),
+            text_encoder_2_lr: gr.update(
+                value=config["text_encoder_2_lr"] if model_type == "sdxl" else "",
+                visible=model_type == "sdxl",
+                interactive=True
+            ),
+            flux_shift: gr.update(
+                value=config["flux_shift"] if model_type in ["flux", "chroma"] else False,
+                visible=model_type in ["flux", "chroma"],
+                interactive=True
+            ),
+            lumina_shift: gr.update(
+                value=config["lumina_shift"] if model_type == "lumina_2" else False,
+                visible=model_type == "lumina_2",
+                interactive=True
+            ),
+            llama3_4bit: gr.update(
+                value=config.get("llama3_4bit", False) if model_type == "hidream" else False,
+                visible=model_type == "hidream",
+                interactive=True
+            ),
+            max_llama3_sequence_length: gr.update(
+                value=config.get("max_llama3_sequence_length", 128) if model_type == "hidream" else "",
+                visible=model_type == "hidream",
+                interactive=True
+            )
+        }
+
     # Handle selecting an existing dataset
     existing_datasets.change(
         fn=handle_select_existing,
@@ -1817,26 +2317,79 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             output_dir, 
             upload_status, 
             gallery,
-            # download_button,
             download_status,
-            hidden_config 
+            hidden_config,
+            model_type  # Add model_type to outputs
         ]
     ).then(
         fn=lambda config_vals: update_ui_with_config(config_vals),
         inputs=hidden_config,  # Receives configuration values
         outputs=[
-            epochs, batch_size, lr, save_every, eval_every, rank, only_double_blocks, dtype,
-            transformer_path, vae_path, llm_path, clip_path, optimizer_type,
+            epochs, batch_size, lr, save_every, eval_every, lora_dtype, rank, only_double_blocks, dtype,
+            transformer_dtype, transformer_path, vae_path, llm_path, clip_path, optimizer_type,
             betas, weight_decay, eps, gradient_accumulation_steps, num_repeats,
             resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, ar_buckets,
-            frame_buckets, gradient_clipping, warmup_steps, eval_before_first_step,
+            frame_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step,
             eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps,
             checkpoint_every_n_minutes, activation_checkpointing, partition_method,
-            save_dtype, caching_batch_size, steps_per_print, video_clip_mode, enable_wandb,
-            wandb_run_name, wandb_tracker_name, wandb_api_key
+            save_dtype, caching_batch_size, steps_per_print, video_clip_mode,
+            enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
+        ]
+    ).then(
+        fn=handle_model_type_change,
+        inputs=model_type,
+        outputs=[
+            transformer_path, vae_path, llm_path, clip_path,
+            diffusers_path, single_file_path, checkpoint_path,
+            text_encoder_path, llama3_path, dtype,
+            transformer_dtype, timestep_sample_method, unet_lr,
+            text_encoder_1_lr, text_encoder_2_lr, flux_shift,
+            lumina_shift, llama3_4bit, max_llama3_sequence_length
         ]
     )
     
+    # Connect the model type change handler
+    model_type.change(
+        fn=handle_model_type_change,
+        inputs=model_type,
+        outputs=[
+            transformer_path, vae_path, llm_path, clip_path,
+            diffusers_path, single_file_path, checkpoint_path,
+            text_encoder_path, llama3_path, dtype,
+            transformer_dtype, timestep_sample_method, unet_lr,
+            text_encoder_1_lr, text_encoder_2_lr, flux_shift,
+            lumina_shift, llama3_4bit, max_llama3_sequence_length
+        ]
+    )
+    
+    # Add the download button click handler
+    download_model_button.click(
+        fn=handle_download_click,
+        inputs=[model_type, output, hf_token],
+        outputs=[output, model_status]
+    )
+
+    # Update model status when model type changes
+    model_type.change(
+        fn=update_model_status,
+        inputs=model_type,
+        outputs=model_status
+    ).then(
+        fn=toggle_hf_token_visibility,
+        inputs=model_type,
+        outputs=hf_token
+    )
+
+    # Update model status on initial load
+    demo.load(
+        fn=update_model_status,
+        inputs=model_type,
+        outputs=model_status
+    ).then(
+        fn=toggle_hf_token_visibility,
+        inputs=model_type,
+        outputs=hf_token
+    )
     
 def parse_args():
     parser = argparse.ArgumentParser(description="Gradio Interface for LoRA Training on Hunyuan Video")

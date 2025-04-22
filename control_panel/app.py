@@ -27,15 +27,15 @@ from dotenv import load_dotenv
 # -------------------------------------------------------------------------
 
 # Flag to determine if running in local development or production environment
-LOCAL_DEV = os.environ.get('LOCAL_DEV', 'false').lower() == 'true'
+DOCKER_DEV = os.environ.get('DOCKER_DEV', 'false').lower() == 'true'
 
 # Directory paths - adjust based on environment
-if LOCAL_DEV:
+if DOCKER_DEV:
     BASE_PATH = Path("/workspace/ComfyUI/models")
     SCRIPTS_PATH = Path("/scripts")
 else:
-    BASE_PATH = Path("/workspace/ComfyUI/models")
-    SCRIPTS_PATH = Path("/scripts")
+    BASE_PATH = Path("workspace/ComfyUI/models")
+    SCRIPTS_PATH = Path("scripts")
 
 PRESET_SCRIPTS_PATH = SCRIPTS_PATH / "preset_model_scripts"
 
@@ -107,6 +107,13 @@ model_current_process = None
 huggingface_current_process = None
 
 model_download_thread = None
+
+# Add this near the other status dictionaries
+training_tool_output = {
+    "status": "idle",
+    "message": "",
+    "output": []
+}
 
 # -------------------------------------------------------------------------
 # Helper Functions
@@ -527,7 +534,7 @@ class HuggingFaceForm(FlaskForm):
 def index():
     # Get available download scripts
     download_scripts = []
-    for script in glob.glob('scripts/preset_model_scripts/download_*.sh'):
+    for script in glob.glob(f'{SCRIPTS_PATH}/preset_model_scripts/download_*.sh'):
         script_name = os.path.basename(script).replace('download_', '').replace('.sh', '')
         model_info = parse_script_header(script)
         download_scripts.append({
@@ -542,7 +549,7 @@ def index():
     
     # Get available training tools
     training_tools = []
-    training_scripts = glob.glob('/scripts/training_tool_scripts/*setup.sh')
+    training_scripts = glob.glob(f'{SCRIPTS_PATH}/training_tool_scripts/*setup.sh')
     print(f"DEBUG: Found training scripts: {training_scripts}")
     for script in training_scripts:
         tool_info = parse_training_tool_script(script)
@@ -567,14 +574,56 @@ def index():
 def install_training_tool():
     tool = request.form.get('tool')
     try:
-        script_path = f'/scripts/training_tool_scripts/{tool}setup.sh'  # Updated to match actual filename pattern
+        script_path = str(SCRIPTS_PATH / f"training_tool_scripts/{tool}_setup.sh")
         if not os.path.exists(script_path):
             return jsonify({'status': 'error', 'message': f'Setup script not found for {tool}'}), 404
+        
+        # Reset status
+        training_tool_output.update({
+            "status": "installing",
+            "message": f"Installing {tool}...",
+            "output": []
+        })
+        
+        # Run the script and capture output
+        process = subprocess.Popen(
+            [script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
+        )
+        
+        # Read output line by line
+        for line in iter(process.stdout.readline, ''):
+            training_tool_output["output"].append(line.strip())
+        
+        process.wait()
+        
+        if process.returncode == 0:
+            training_tool_output.update({
+                "status": "completed",
+                "message": f"{tool} installed successfully"
+            })
+            return jsonify({'status': 'success', 'message': f'{tool} installed successfully'})
+        else:
+            training_tool_output.update({
+                "status": "error",
+                "message": f"Installation failed with return code {process.returncode}"
+            })
+            return jsonify({'status': 'error', 'message': f'Installation failed with return code {process.returncode}'}), 500
             
-        subprocess.run([script_path], check=True)
-        return jsonify({'status': 'success', 'message': f'{tool} installed successfully'})
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
+        training_tool_output.update({
+            "status": "error",
+            "message": str(e)
+        })
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/training_tool_status')
+def training_tool_status():
+    return jsonify(training_tool_output)
 
 @app.route('/download_huggingface', methods=['POST'])
 def download_huggingface():
@@ -895,7 +944,7 @@ def run_download_script():
     # Get script info for all selected models
     model_infos = []
     for script_name in script_names:
-        download_script = f'scripts/preset_model_scripts/download_{script_name}.sh'
+        download_script = f'{SCRIPTS_PATH}/preset_model_scripts/download_{script_name}.sh'
         
         if not os.path.exists(download_script):
             return jsonify({'status': 'error', 'message': f'Script not found for {script_name}'}), 404
@@ -979,7 +1028,7 @@ def model_status():
 def model_downloader():
     # Get available download scripts
     download_scripts = []
-    for script in glob.glob('scripts/preset_model_scripts/download_*.sh'):
+    for script in glob.glob(f'{SCRIPTS_PATH}/preset_model_scripts/download_*.sh'):
         script_name = os.path.basename(script).replace('download_', '').replace('.sh', '')
         model_info = parse_script_header(script)
         download_scripts.append({

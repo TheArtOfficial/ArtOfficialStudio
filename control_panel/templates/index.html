@@ -311,6 +311,12 @@
         .form-check {
             margin-bottom: 5px;
         }
+        .log-box {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -403,6 +409,19 @@
                 </form>
 
                 <div id="trainingStatus" class="status-message mt-3"></div>
+
+                <!-- Add this after the training tools form -->
+                <div class="card mt-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Installation Log</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="copyLogBtn">
+                            <i class="bi bi-clipboard"></i> Copy Log
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="trainingToolLog" class="log-box" style="height: 200px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace;"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- CivitAI Downloader Tab -->
@@ -881,6 +900,72 @@
                 .catch(error => {
                     console.error('Error:', error);
                 });
+            });
+        });
+
+        // Training tool installation status polling
+        let trainingToolStatusInterval;
+
+        function updateTrainingToolLog(status) {
+            const logBox = document.getElementById('trainingToolLog');
+            logBox.innerHTML = status.output.map(line => `<div>${line}</div>`).join('');
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function pollTrainingToolStatus() {
+            fetch('/training_tool_status')
+                .then(response => response.json())
+                .then(data => {
+                    updateTrainingToolLog(data);
+                    if (data.status === 'completed' || data.status === 'error') {
+                        clearInterval(trainingToolStatusInterval);
+                    }
+                });
+        }
+
+        // Update the form submission handler
+        document.getElementById('trainingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            // Clear previous log
+            document.getElementById('trainingToolLog').innerHTML = '';
+            
+            // Start polling
+            trainingToolStatusInterval = setInterval(pollTrainingToolStatus, 1000);
+            
+            fetch('/install_training_tool', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'error') {
+                    clearInterval(trainingToolStatusInterval);
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                clearInterval(trainingToolStatusInterval);
+                alert('Error: ' + error);
+            });
+        });
+
+        // Add copy log functionality
+        document.getElementById('copyLogBtn').addEventListener('click', function() {
+            const logBox = document.getElementById('trainingToolLog');
+            const logText = logBox.textContent;
+            
+            navigator.clipboard.writeText(logText).then(() => {
+                // Show feedback
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+                alert('Failed to copy log contents');
             });
         });
     </script>

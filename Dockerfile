@@ -13,6 +13,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV SHELL=/bin/bash
 ENV PYTHONUNBUFFERED=True
+ENV DOCKER_DEV=True
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Set the base release version
@@ -172,6 +173,7 @@ COPY --chmod=755 workflows /workspace/workflows
 COPY --chmod=755 control_panel /control_panel
 COPY --chmod=755 scripts /scripts
 COPY --chmod=755 gradio_interface.py /gradio_interface.py
+COPY --chmod=755 hfd.sh /hfd.sh
 
 # Set the entrypoint
 ENTRYPOINT ["/start.sh"] 
