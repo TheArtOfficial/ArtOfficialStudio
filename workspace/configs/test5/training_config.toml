@@ -22,10 +22,7 @@ pipeline_stages = 1
 
 [model]
 type = "flux"
-transformer_path = ""
-vae_path = ""
-llm_path = ""
-clip_path = ""
+diffusers_path = "/workspace/training_models/FLUX.1-dev"
 dtype = "bfloat16"
 transformer_dtype = "float8"
 timestep_sample_method = "logit_normal"

@@ -157,6 +157,8 @@ def create_training_config(
     
     # Model parameters
     model_type: str,
+    checkpoint_path: str,
+    diffusers_path: str,
     transformer_path: str,
     vae_path: str,
     llm_path: str,
@@ -188,6 +190,20 @@ def create_training_config(
     
     num_gpus = int(os.getenv("NUM_GPUS", "1"))
     
+    # Create model configuration with empty string handling
+    model_config = {
+        "type": model_type,
+        "checkpoint_path": checkpoint_path if checkpoint_path else None,
+        "diffusers_path": diffusers_path if diffusers_path else None,
+        "transformer_path": transformer_path if transformer_path else None,
+        "vae_path": vae_path if vae_path else None,
+        "llm_path": llm_path if llm_path else None,
+        "clip_path": clip_path if clip_path else None,
+        "dtype": dtype,
+        "transformer_dtype": transformer_dtype,
+        "timestep_sample_method": "logit_normal"
+    }
+    
     training_config = {
         "output_dir": output_dir,
         "dataset": dataset_config_path,
@@ -211,16 +227,7 @@ def create_training_config(
         "video_clip_mode": video_clip_mode,
         "pipeline_stages": num_gpus,
         # Model configuration with fixed type and sampling method
-        "model": {
-            "type": model_type,
-            "transformer_path": transformer_path,
-            "vae_path": vae_path,
-            "llm_path": llm_path,
-            "clip_path": clip_path,
-            "dtype": dtype,
-            "transformer_dtype": transformer_dtype,
-            "timestep_sample_method": "logit_normal"
-        },
+        "model": model_config,
         # Adapter configuration with fixed type
         "adapter": {
             "type": "lora",
@@ -485,7 +492,7 @@ def toggle_dataset_option(option):
             gr.update(visible=False),     # Hide Upload Files Button
         )
 
-def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+def train_model(model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, checkpoint_path, diffusers_path,
                 transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
                 gradient_accumulation_steps, num_repeats, resolutions, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
                 ):
@@ -561,7 +568,9 @@ def train_model(dataset_path, config_dir, output_dir, epochs, batch_size, lr, sa
             caching_batch_size=caching_batch_size,
             steps_per_print=steps_per_print,
             video_clip_mode=video_clip_mode,
-            model_type=model_type.value,
+            model_type=model_type,
+            checkpoint_path=checkpoint_path,
+            diffusers_path=diffusers_path,
             transformer_path=transformer_path,
             vae_path=vae_path,
             llm_path=llm_path,
@@ -1162,7 +1171,7 @@ def parse_model_configs():
                         config = json.loads(json_str)
                         
                         # Add token requirement based on model type
-                        if config['model_type'] in ['flux', 'hidream']:
+                        if config.get('model_type') in ['flux', 'hidream']:
                             config['requires_hf_token'] = True
                         else:
                             config['requires_hf_token'] = False
@@ -1175,7 +1184,11 @@ def parse_model_configs():
                             if isinstance(value, str) and key.endswith('_path'):
                                 if not os.path.isabs(value):
                                     config[key] = os.path.join(BASE_PATH, value.lstrip('/'))
-                        configs[config['model_type']] = config
+                                    
+                        # Use model_name as the key
+                        model_name = config.get('model_name', script.replace('download_', '').replace('.sh', ''))
+                        configs[model_name] = config
+                        
                     except json.JSONDecodeError as e:
                         print(f"Error parsing JSON in {script}: {str(e)}")
                         print(f"JSON string was: {json_str}")
@@ -1193,13 +1206,14 @@ def get_model_types():
         return sorted(default_types)
     return sorted(list(configs.keys()))
 
-def update_model_config(model_type):
+def update_model_config(model_name):
     """Update model configuration fields based on the selected model type."""
     configs = parse_model_configs()
-    config = configs.get(model_type, {})
+    config = configs.get(model_name, {})
     
     # Default values for all fields
     defaults = {
+        "model_name": None,
         "transformer_path": None,
         "vae_path": None,
         "llm_path": None,
@@ -1231,10 +1245,10 @@ def update_model_config(model_type):
     
     return defaults
 
-def check_model_exists(model_type):
+def check_model_exists(model_name):
     """Check if the model files exist based on the model type."""
     configs = parse_model_configs()
-    config = configs.get(model_type, {})
+    config = configs.get(model_name, {})
     
     if not config:
         return False
@@ -1246,14 +1260,14 @@ def check_model_exists(model_type):
                 return False
     return True
 
-def run_download_script(model_type, log_box, hf_token=None):
+def run_download_script(model_name, log_box, hf_token=None):
     """Run the download script for the selected model type."""
     # Get the script filename from the model config
     configs = parse_model_configs()
-    config = configs.get(model_type, {})
+    config = configs.get(model_name, {})
     
     if not config:
-        return log_box + f"\nError: No configuration found for model type {model_type}", False
+        return log_box + f"\nError: No configuration found for model type {model_name}", False
         
     # Use the script filename from the config
     script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, config.get('script_name', f"download_{model_type.replace('-', '_')}.sh"))
@@ -1302,16 +1316,16 @@ def run_download_script(model_type, log_box, hf_token=None):
     except Exception as e:
         return log_box + f"\nError running download script: {str(e)}", False
 
-def handle_download_click(model_type, log_box, hf_token):
+def handle_download_click(model_name, log_box, hf_token):
     """Handle download button click."""
     configs = parse_model_configs()
-    config = configs.get(model_type, {})
+    config = configs.get(model_name, {})
     
     # Check if token is required for this model
     if config.get('requires_hf_token', False) and not hf_token:
         return log_box, "HuggingFace token is required for this model. Please enter your token and try again."
         
-    log_box = f"Starting download for {model_type}...\n"
+    log_box = f"Starting download for {model_name}...\n"
     
     # Create a queue to pass output between threads
     output_queue = queue.Queue()
@@ -1319,7 +1333,7 @@ def handle_download_click(model_type, log_box, hf_token):
     def download_thread():
         try:
             # Run the download script and capture output
-            script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, config.get('script_name', f"download_{model_type.replace('-', '_')}.sh"))
+            script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, config.get('script_name', f"download_{model_name.replace('-', '_')}.sh"))
             
             # Set environment variable if token is provided
             env = os.environ.copy()
@@ -1382,16 +1396,16 @@ def handle_download_click(model_type, log_box, hf_token):
         log_box += "\nDownload completed successfully!"
         yield log_box, "Model Downloaded! Train away"
 
-def update_model_status(model_type):
+def update_model_status(model_name):
     """Update the model status text based on whether the model exists."""
-    if check_model_exists(model_type):
+    if check_model_exists(model_name):
         return "Model Downloaded! Train away"
     return "Model not downloaded. Please download before training."
 
-def toggle_hf_token_visibility(model_type):
+def toggle_hf_token_visibility(model_name):
     """Show/hide the HuggingFace token input based on model type."""
     configs = parse_model_configs()
-    config = configs.get(model_type, {})
+    config = configs.get(model_name, {})
     return gr.update(visible=config.get('requires_hf_token', False))
 
 # Gradio Interface
@@ -1522,12 +1536,12 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                     [],    # Clear gallery
                     gr.update(value=""),         # Clear download status
                     {},    # Clear config values
-                    "hunyuan-video"  # Default model type
+                    "wan"  # Default model type
                 )
             config_values = extract_config_values(config)
             
             # Get model type from config
-            model_type = config.get("model", {}).get("type", "hunyuan-video")
+            model_type = config.get("model", {}).get("type", "HunyuanVideo")
             
             # Update config and output paths
             config_path = os.path.join(CONFIG_DIR, selected_dataset)
@@ -1543,7 +1557,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 config_values,  # Update training parameters
                 model_type     # Update model type
             )
-        return "", "", "", "No dataset selected.", [], gr.update(value=""), {}, "hunyuan-video"  # Default model type
+        return "", "", "", "No dataset selected.", [], gr.update(value=""), {}, "HunyuanVideo"  # Default model type
 
     with gr.Row():
         with gr.Column():
@@ -1603,11 +1617,18 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     gr.Markdown("#### Models Configurations")
     with gr.Row():
         with gr.Column():
-            model_type = gr.Dropdown(
+            model_name = gr.Dropdown(
                 choices=get_model_types(),
-                value="hunyuan-video",
+                value="HunyuanVideo",
                 label="Select Model",
                 interactive=True
+            )
+
+            model_type = gr.Textbox(
+                label="Model Type",
+                value="",
+                visible=False,
+                interactive=False
             )
             
             # Add HuggingFace token input
@@ -2072,7 +2093,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
 
     
     def handle_train_click(
-        dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+        model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, checkpoint_path, diffusers_path,
         transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
         gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
     ):
@@ -2082,6 +2103,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 return "A training process is already running. Please stop it before starting a new one.", training_process_pid, gr.update(interactive=False)
             
         message, pid = train_model(
+            model_name=model_name,
+            model_type=model_type,
             dataset_path=dataset_path,
             config_dir=config_dir,
             output_dir=output_dir,
@@ -2092,6 +2115,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             eval_every=eval_every,
             rank=rank,
             lora_dtype=lora_dtype,
+            checkpoint_path=checkpoint_path,
+            diffusers_path=diffusers_path,
             transformer_path=transformer_path,
             vae_path=vae_path,
             llm_path=llm_path,
@@ -2248,8 +2273,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     train_click = train_button.click(
         fn=handle_train_click,
         inputs=[
-            dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
-            transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+            model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
+            checkpoint_path, diffusers_path, transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
             gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar,
             num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step,
             eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes,
@@ -2298,104 +2323,134 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     )
     
     # Add the model type change handler
-    def handle_model_type_change(model_type):
-        config = update_model_config(model_type)
+    def handle_model_type_change(model_name):
+        """Update model configuration fields based on the selected model name."""
+        configs = parse_model_configs()
+        config = configs.get(model_name, {})
+        
+        if not config:
+            return {
+                model_type: gr.update(value="", visible=False),
+                transformer_path: gr.update(value="", visible=False),
+                vae_path: gr.update(value="", visible=False),
+                llm_path: gr.update(value="", visible=False),
+                clip_path: gr.update(value="", visible=False),
+                diffusers_path: gr.update(value="", visible=False),
+                single_file_path: gr.update(value="", visible=False),
+                checkpoint_path: gr.update(value="", visible=False),
+                text_encoder_path: gr.update(value="", visible=False),
+                llama3_path: gr.update(value="", visible=False),
+                dtype: gr.update(value="bfloat16", visible=True),
+                transformer_dtype: gr.update(value="float8", visible=True),
+                timestep_sample_method: gr.update(value="", visible=False),
+                unet_lr: gr.update(value="", visible=False),
+                text_encoder_1_lr: gr.update(value="", visible=False),
+                text_encoder_2_lr: gr.update(value="", visible=False),
+                flux_shift: gr.update(value=False, visible=False),
+                lumina_shift: gr.update(value=False, visible=False),
+                llama3_4bit: gr.update(value=False, visible=False),
+                max_llama3_sequence_length: gr.update(value="", visible=False)
+            }
+        
+        # Get model type from config
+        model_type_value = config.get('model_type', '')
         
         # Update visibility and values of all fields
         return {
+            model_type: gr.update(value=model_type_value, visible=True),
             transformer_path: gr.update(
-                value=config["transformer_path"],
-                visible=config["transformer_path"] is not None,
+                value=config.get("transformer_path", ""),
+                visible=bool(config.get("transformer_path")),
                 interactive=True
             ),
             vae_path: gr.update(
-                value=config["vae_path"],
-                visible=config["vae_path"] is not None,
+                value=config.get("vae_path", ""),
+                visible=bool(config.get("vae_path")),
                 interactive=True
             ),
             llm_path: gr.update(
-                value=config["llm_path"],
-                visible=config["llm_path"] is not None,
+                value=config.get("llm_path", ""),
+                visible=bool(config.get("llm_path")),
                 interactive=True
             ),
             clip_path: gr.update(
-                value=config["clip_path"],
-                visible=config["clip_path"] is not None,
+                value=config.get("clip_path", ""),
+                visible=bool(config.get("clip_path")),
                 interactive=True
             ),
             diffusers_path: gr.update(
-                value=config["diffusers_path"],
-                visible=config["diffusers_path"] is not None,
+                value=config.get("diffusers_path", ""),
+                visible=bool(config.get("diffusers_path")),
                 interactive=True
             ),
             single_file_path: gr.update(
-                value=config["single_file_path"],
-                visible=config["single_file_path"] is not None,
+                value=config.get("single_file_path", ""),
+                visible=bool(config.get("single_file_path")),
                 interactive=True
             ),
             checkpoint_path: gr.update(
-                value=config["checkpoint_path"],
-                visible=config["checkpoint_path"] is not None,
+                value=config.get("checkpoint_path", ""),
+                visible=bool(config.get("checkpoint_path")),
                 interactive=True
             ),
             text_encoder_path: gr.update(
-                value=config["text_encoder_path"],
-                visible=config["text_encoder_path"] is not None,
+                value=config.get("text_encoder_path", ""),
+                visible=bool(config.get("text_encoder_path")),
                 interactive=True
             ),
             llama3_path: gr.update(
-                value=config["llama3_path"],
-                visible=config["llama3_path"] is not None,
+                value=config.get("llama3_path", ""),
+                visible=bool(config.get("llama3_path")),
                 interactive=True
             ),
             dtype: gr.update(
-                value=config["dtype"],
+                value=config.get("dtype", "bfloat16"),
                 visible=True,
                 interactive=True
             ),
             transformer_dtype: gr.update(
-                value=config["transformer_dtype"],
+                value=config.get("transformer_dtype", "float8"),
                 visible=True,
                 interactive=True
             ),
             timestep_sample_method: gr.update(
-                value=config["timestep_sample_method"] if bool(config["timestep_sample_method"]) else "",
-                visible=bool(config["timestep_sample_method"]),
+                value=config.get("timestep_sample_method", ""),
+                visible=bool(config.get("timestep_sample_method")),
                 interactive=True
             ),
             unet_lr: gr.update(
-                value=config["unet_lr"] if model_type == "sdxl" else "",
-                visible=model_type == "sdxl",
+                value=config.get("unet_lr", "") if model_type_value == "sdxl" else "",
+                visible=model_type_value == "sdxl",
                 interactive=True
             ),
             text_encoder_1_lr: gr.update(
-                value=config["text_encoder_1_lr"] if model_type == "sdxl" else "",
-                visible=model_type == "sdxl",
+                value=config.get("text_encoder_1_lr", "") if model_type_value == "sdxl" else "",
+                visible=model_type_value == "sdxl",
                 interactive=True
             ),
             text_encoder_2_lr: gr.update(
-                value=config["text_encoder_2_lr"] if model_type == "sdxl" else "",
-                visible=model_type == "sdxl",
+                value=config.get("text_encoder_2_lr", "") if model_type_value == "sdxl" else "",
+                visible=model_type_value == "sdxl",
                 interactive=True
             ),
             flux_shift: gr.update(
-                value=config["flux_shift"] if model_type in ["flux", "chroma"] else False,
-                visible=model_type in ["flux", "chroma"],
+                value=config.get("flux_shift", False) if model_type_value in ["flux", "chroma"] else False,
+                visible=model_type_value in ["flux", "chroma"],
                 interactive=True
             ),
             lumina_shift: gr.update(
-                value=config["lumina_shift"] if model_type == "lumina_2" else False,
-                visible=model_type == "lumina_2",
+                value=config.get("lumina_shift", False) if model_type_value == "lumina_2" else False,
+                visible=model_type_value == "lumina_2",
                 interactive=True
             ),
             llama3_4bit: gr.update(
-                value=config.get("llama3_4bit", False) if model_type == "hidream" else False,
-                visible=model_type == "hidream",
+                value=config.get("llama3_4bit", False) if model_type_value == "hidream" else False,
+                visible=model_type_value == "hidream",
                 interactive=True
             ),
             max_llama3_sequence_length: gr.update(
-                value=config.get("max_llama3_sequence_length", 128) if model_type == "hidream" else "",
-                visible=model_type == "hidream",
+                value=config.get("max_llama3_sequence_length", "") if model_type_value == "hidream" else "",
+                visible=model_type_value == "hidream",
                 interactive=True
             )
         }
@@ -2430,57 +2485,85 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
         ]
     ).then(
         fn=handle_model_type_change,
-        inputs=model_type,
+        inputs=model_name,
         outputs=[
-            transformer_path, vae_path, llm_path, clip_path,
-            diffusers_path, single_file_path, checkpoint_path,
-            text_encoder_path, llama3_path, dtype,
-            transformer_dtype, timestep_sample_method, unet_lr,
-            text_encoder_1_lr, text_encoder_2_lr, flux_shift,
-            lumina_shift, llama3_4bit, max_llama3_sequence_length
+            model_type,
+            transformer_path,
+            vae_path,
+            llm_path,
+            clip_path,
+            diffusers_path,
+            single_file_path,
+            checkpoint_path,
+            text_encoder_path,
+            llama3_path,
+            dtype,
+            transformer_dtype,
+            timestep_sample_method,
+            unet_lr,
+            text_encoder_1_lr,
+            text_encoder_2_lr,
+            flux_shift,
+            lumina_shift,
+            llama3_4bit,
+            max_llama3_sequence_length
         ]
     )
     
     # Connect the model type change handler
-    model_type.change(
+    model_name.change(
         fn=handle_model_type_change,
-        inputs=model_type,
+        inputs=model_name,
         outputs=[
-            transformer_path, vae_path, llm_path, clip_path,
-            diffusers_path, single_file_path, checkpoint_path,
-            text_encoder_path, llama3_path, dtype,
-            transformer_dtype, timestep_sample_method, unet_lr,
-            text_encoder_1_lr, text_encoder_2_lr, flux_shift,
-            lumina_shift, llama3_4bit, max_llama3_sequence_length
+            model_type,
+            transformer_path,
+            vae_path,
+            llm_path,
+            clip_path,
+            diffusers_path,
+            single_file_path,
+            checkpoint_path,
+            text_encoder_path,
+            llama3_path,
+            dtype,
+            transformer_dtype,
+            timestep_sample_method,
+            unet_lr,
+            text_encoder_1_lr,
+            text_encoder_2_lr,
+            flux_shift,
+            lumina_shift,
+            llama3_4bit,
+            max_llama3_sequence_length
         ]
     )
     
     # Add the download button click handler
     download_model_button.click(
         fn=handle_download_click,
-        inputs=[model_type, download_log, hf_token],
+        inputs=[model_name, download_log, hf_token],
         outputs=[download_log, model_status]
     )
 
     # Update model status when model type changes
-    model_type.change(
+    model_name.change(
         fn=update_model_status,
-        inputs=model_type,
+        inputs=model_name,
         outputs=model_status
     ).then(
         fn=toggle_hf_token_visibility,
-        inputs=model_type,
+        inputs=model_name,
         outputs=hf_token
     )
 
     # Update model status on initial load
     demo.load(
         fn=update_model_status,
-        inputs=model_type,
+        inputs=model_name,
         outputs=model_status
     ).then(
         fn=toggle_hf_token_visibility,
-        inputs=model_type,
+        inputs=model_name,
         outputs=hf_token
     )
     

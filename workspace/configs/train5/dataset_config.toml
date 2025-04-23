@@ -5,6 +5,6 @@ max_ar = 2
 num_ar_buckets = 7
 frame_buckets = [ 1, 33,]
 [[directory]]
-path = "workspace/datasets"
+path = "workspace/datasets/train5"
 num_repeats = 10
 
