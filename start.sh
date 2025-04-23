@@ -88,7 +88,8 @@ start_jupyter() {
 echo "Pod Started"
 
 setup_ssh
-#execute_script "/scripts/comfy_setup.sh" "Running ComfyUI setup script..."
+execute_script "/scripts/comfy_setup.sh" "Running ComfyUI setup script..."
+echo "ComfyUI Ready on port 0.0.0.0:$COMFYUI_PORT"
 # Start JupyterLab
 jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*' --NotebookApp.token='' --ServerApp.preferred_dir=/workspace --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}' &
 echo "JupyterLab started"
@@ -96,7 +97,10 @@ export_env_vars
 
 #start_nginx
 
-execute_script "/post_start.sh" "Running post-start script..."
+execute_script "/scripts/setup_control_panel.sh" "Running control panel setup script..."
+
+python3.12 -m pip install tensorboard --root-user-action=ignore
+tensorboard --logdir_spec=/workspace/ComfyUI/models/loras --host=0.0.0.0 --port=$TENSORBOARD_PORT &
 
 echo "Start script(s) finished, pod is ready to use."
 

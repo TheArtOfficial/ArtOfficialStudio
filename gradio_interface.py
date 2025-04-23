@@ -2589,4 +2589,4 @@ if __name__ == "__main__":
     for dir_path in [MODEL_DIR, BASE_DATASET_DIR, OUTPUT_DIR, CONFIG_DIR]:
         os.makedirs(dir_path, exist_ok=True)
     
-    demo.launch(server_name="0.0.0.0", server_port=7860, allowed_paths=["/workspace", ".", os.getcwd()])
+    demo.launch(server_name="0.0.0.0", server_port=7000, allowed_paths=["/workspace", ".", os.getcwd()])

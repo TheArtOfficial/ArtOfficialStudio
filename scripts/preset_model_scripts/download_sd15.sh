@@ -9,5 +9,5 @@ mkdir -p "/workspace/ComfyUI/models"
 
 # Download v1-5-pruned.ckpt
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/checkpoints" \
-    -o "v1-5-pruned.ckpt" \
+    -o "v1-5-pruned.ckpt" --auto-file-renaming=false --conditional-get=true \
     "https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5/resolve/main/v1-5-pruned.ckpt"

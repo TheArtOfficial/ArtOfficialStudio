@@ -1,6 +1,6 @@
 #!/bin/bash
 # Tool: FluxGym
-# Description: Training tool for Flux Loras with advanced features and optimizations
+# Description: (Intall flux from Model Downloader) Training tool for Flux Loras with advanced features and optimizations
 
 # Create workspace directory if it doesn't exist
 cd /workspace
@@ -29,7 +29,7 @@ pip install --upgrade --force-reinstall triton==2.2.0
 deactivate
 # Start FluxGym
 echo "modifying gradio port"
-sed -i 's/demo\.launch(debug=True, show_error=True, allowed_paths=\[cwd\])/demo.launch(debug=True, show_error=True, allowed_paths=\[cwd\], server_port=7000, server_name="0.0.0.0")/' app.py
+sed -i 's/demo\.launch(debug=True, show_error=True, allowed_paths=\[cwd\])/demo.launch(debug=True, show_error=True, allowed_paths=\[cwd\], server_port=6000, server_name="0.0.0.0")/' app.py
 echo "Starting FluxGym..."
 cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py
 echo "FluxGym setup complete."

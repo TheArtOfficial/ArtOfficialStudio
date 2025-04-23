@@ -1,0 +1,1 @@
+docker run -it -p 5000:5000 -p 6000:6000 -p 7000:7000 -p 8188:8188 -p 8888:888 -v /your_repo:/workspace ghcr.io/theartofficial/artofficialstudio:latest

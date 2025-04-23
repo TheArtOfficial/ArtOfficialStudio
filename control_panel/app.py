@@ -896,14 +896,14 @@ def run_model_download(script_path, script_name, display_name, token=None):
             
             # Add token to URL if needed
             if token:
-                # Find the URL in the command
-                url_match = re.search(r'https?://[^\s"\']+', cmd)
+                # Find the URL in the command, handling both quoted and unquoted URLs
+                url_match = re.search(r'["\']?https?://[^\s"\']+(?=["\']|$)', cmd)
                 if url_match:
                     url = url_match.group(0)
-                    # Add token to URL
-                    new_url = f"{url}?token={token}"
-                    # Replace the URL in the command
-                    cmd = cmd.replace(url, new_url)
+                    # Remove any leading quotes from the URL
+                    # url = url.lstrip('"\'')
+                    # Add Authorization header with Bearer token
+                    cmd = cmd.replace(url_match.group(0), f'--header="Authorization: Bearer {token}" {url}')
             
             print(f"DEBUG: Executing command: {cmd}")
             
@@ -957,6 +957,20 @@ def run_model_download(script_path, script_name, display_name, token=None):
                     "message": f"Error downloading {display_name} ({i+1}/{len(commands)}). Return code: {return_code}"
                 })
                 return False
+                
+            # Update status for successful completion of this file
+            model_download_status.update({
+                "progress": 100,
+                "message": f"Completed {display_name} ({i+1}/{len(commands)})"
+            })
+            
+            # If this was the last command, mark the overall download as complete
+            if i == len(commands) - 1:
+                model_download_status.update({
+                    "status": "completed",
+                    "message": f"Successfully downloaded {display_name}",
+                    "progress": 100
+                })
                 
         return True
         
@@ -1108,17 +1122,23 @@ def model_status():
     """
     global model_current_process
     
-    # If process doesn't exist but status is still downloading, reset it
-    if not model_current_process and model_download_status.get('status') == 'downloading':
-        model_download_status.update({
-            "status": "error",
-            "message": "Download process exited unexpectedly. Please try again.",
-            "progress": 0,
-            "downloaded": "0B",
-            "total": "0B",
-            "speed": "0B/s",
-            "eta": "Unknown"
-        })
+    # Only check for unexpected exit if we were actually downloading
+    if model_download_status.get('status') == 'downloading' and model_current_process is None:
+        # Check if the download thread is still running
+        if model_download_thread and model_download_thread.is_alive():
+            # Thread is still running, process might be starting up
+            return jsonify(model_download_status)
+        else:
+            # Thread is not running and process is None, something went wrong
+            model_download_status.update({
+                "status": "error",
+                "message": "Download process exited unexpectedly. Please try again.",
+                "progress": 0,
+                "downloaded": "0B",
+                "total": "0B",
+                "speed": "0B/s",
+                "eta": "Unknown"
+            })
     
     return jsonify(model_download_status)
 

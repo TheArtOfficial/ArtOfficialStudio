@@ -2,7 +2,7 @@
 
 echo "Starting post-installation setup..."
 
-/scripts/setup_control_panel.sh
+
 
 # /scripts/fluxgym_setup.sh
 
