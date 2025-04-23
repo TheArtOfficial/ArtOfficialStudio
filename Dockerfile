@@ -117,8 +117,12 @@ RUN add-apt-repository ppa:deadsnakes/ppa && apt update
 
 # Install Python 3.12-3.13 (distutils is included in dev package for newer versions)
 RUN apt install --yes --no-install-recommends \
+    python3.10 \
+    python3.10-dev \
+    python3.10-venv \
+    python3.12 \
     python3.12-dev \
-    python3.12-venv 
+    python3.12-venv
 
 # Cleanup
 RUN apt-get autoremove -y && \

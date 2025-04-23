@@ -37,6 +37,9 @@ BASE_DATASET_DIR = BASE_PATH / "datasets"
 OUTPUT_DIR = BASE_PATH / "outputs"
 CONFIG_DIR = BASE_PATH / "configs"
 
+# Download script paths
+DOWNLOAD_SCRIPTS_DIR = SCRIPT_PATH / "download_training_transformers"
+
 # Maximum number of media to display in the gallery
 MAX_MEDIA = 50
 
@@ -1131,15 +1134,14 @@ def get_selected_file(file_paths):
 def parse_model_configs():
     """Parse model configurations from download scripts."""
     configs = {}
-    scripts_dir = os.path.join(SCRIPT_PATH, "download_training_transformers")
     
-    if not os.path.exists(scripts_dir):
-        print(f"Warning: Scripts directory not found at {scripts_dir}")
+    if not os.path.exists(DOWNLOAD_SCRIPTS_DIR):
+        print(f"Warning: Scripts directory not found at {DOWNLOAD_SCRIPTS_DIR}")
         return configs
         
-    for script in os.listdir(scripts_dir):
+    for script in os.listdir(DOWNLOAD_SCRIPTS_DIR):
         if script.endswith('.sh'):
-            script_path = os.path.join(scripts_dir, script)
+            script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, script)
             try:
                 with open(script_path, 'r') as f:
                     content = f.read()
@@ -1164,6 +1166,9 @@ def parse_model_configs():
                             config['requires_hf_token'] = True
                         else:
                             config['requires_hf_token'] = False
+                            
+                        # Add the script filename to the config
+                        config['script_name'] = script
                             
                         # Ensure all paths are absolute
                         for key, value in config.items():
@@ -1243,10 +1248,18 @@ def check_model_exists(model_type):
 
 def run_download_script(model_type, log_box, hf_token=None):
     """Run the download script for the selected model type."""
-    script_path = os.path.join(SCRIPT_PATH, "download_training_transformers", f"download_{model_type.replace('-', '_')}.sh")
+    # Get the script filename from the model config
+    configs = parse_model_configs()
+    config = configs.get(model_type, {})
+    
+    if not config:
+        return log_box + f"\nError: No configuration found for model type {model_type}", False
+        
+    # Use the script filename from the config
+    script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, config.get('script_name', f"download_{model_type.replace('-', '_')}.sh"))
     
     if not os.path.exists(script_path):
-        return log_box + f"\nError: Download script not found for {model_type}", False
+        return log_box + f"\nError: Download script not found at {script_path}", False
         
     try:
         # Set environment variable if token is provided
@@ -1254,23 +1267,34 @@ def run_download_script(model_type, log_box, hf_token=None):
         if hf_token:
             env["HUGGINGFACE_TOKEN"] = hf_token
             
+        # Use Popen with pipes for stdout and stderr
         proc = subprocess.Popen(
             ["bash", script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             universal_newlines=True,
-            env=env
+            env=env,
+            bufsize=1  # Line buffered
         )
         
         # Read output in real-time
         while True:
-            line = proc.stdout.readline()
-            if not line and proc.poll() is not None:
+            output = proc.stdout.readline()
+            if output == '' and proc.poll() is not None:
                 break
-            if line:
-                log_box += line
+            if output:
+                # Add timestamp to each line
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                log_box += f"[{timestamp}] {output}"
                 # Keep only last 200 lines
                 log_box = "\n".join(log_box.split("\n")[-200:])
+                
+        # Get any remaining output
+        remaining_output = proc.stdout.read()
+        if remaining_output:
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            log_box += f"[{timestamp}] {remaining_output}"
+            log_box = "\n".join(log_box.split("\n")[-200:])
                 
         success = proc.returncode == 0
         return log_box, success
@@ -1287,15 +1311,76 @@ def handle_download_click(model_type, log_box, hf_token):
     if config.get('requires_hf_token', False) and not hf_token:
         return log_box, "HuggingFace token is required for this model. Please enter your token and try again."
         
-    log_box += f"\nStarting download for {model_type}..."
-    log_box, success = run_download_script(model_type, log_box, hf_token)
+    log_box = f"Starting download for {model_type}...\n"
     
-    if success:
-        log_box += "\nDownload completed successfully!"
-        return log_box, "Model Downloaded! Train away"
+    # Create a queue to pass output between threads
+    output_queue = queue.Queue()
+    
+    def download_thread():
+        try:
+            # Run the download script and capture output
+            script_path = os.path.join(DOWNLOAD_SCRIPTS_DIR, config.get('script_name', f"download_{model_type.replace('-', '_')}.sh"))
+            
+            # Set environment variable if token is provided
+            env = os.environ.copy()
+            if hf_token:
+                env["HUGGINGFACE_TOKEN"] = hf_token
+                
+            proc = subprocess.Popen(
+                ["bash", script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True,
+                env=env,
+                bufsize=1
+            )
+            
+            # Read output in real-time
+            while True:
+                output = proc.stdout.readline()
+                if output == '' and proc.poll() is not None:
+                    break
+                if output:
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    output_queue.put(f"[{timestamp}] {output}")
+            
+            # Get any remaining output
+            remaining_output = proc.stdout.read()
+            if remaining_output:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                output_queue.put(f"[{timestamp}] {remaining_output}")
+                
+            # Signal completion
+            output_queue.put(None)
+            
+        except Exception as e:
+            output_queue.put(f"Error: {str(e)}")
+            output_queue.put(None)
+    
+    # Start the download in a separate thread
+    download_thread = threading.Thread(target=download_thread)
+    download_thread.start()
+    
+    # Update the log box with new output
+    while True:
+        try:
+            output = output_queue.get(timeout=0.1)
+            if output is None:
+                break
+            log_box += output
+            # Keep only last 200 lines
+            log_box = "\n".join(log_box.split("\n")[-200:])
+            yield log_box, "Downloading..."
+        except queue.Empty:
+            yield log_box, "Downloading..."
+            continue
+    
+    # Check if download was successful
+    if "Error:" in log_box:
+        yield log_box, "Download failed. Please check logs and try again."
     else:
-        log_box += "\nDownload failed!"
-        return log_box, "Download failed. Please check logs and try again."
+        log_box += "\nDownload completed successfully!"
+        yield log_box, "Model Downloaded! Train away"
 
 def update_model_status(model_type):
     """Update the model status text based on whether the model exists."""
@@ -1542,6 +1627,14 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                     interactive=False,
                     visible=True
                 )
+            
+            # Add download log box
+            download_log = gr.Textbox(
+                label="Download Log",
+                lines=10,
+                interactive=False,
+                visible=True
+            )
             
             # Common fields that might be used by multiple models
             transformer_path = gr.Textbox(
@@ -2365,8 +2458,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     # Add the download button click handler
     download_model_button.click(
         fn=handle_download_click,
-        inputs=[model_type, output, hf_token],
-        outputs=[output, model_status]
+        inputs=[model_type, download_log, hf_token],
+        outputs=[download_log, model_status]
     )
 
     # Update model status when model type changes

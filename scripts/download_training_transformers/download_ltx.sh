@@ -1,6 +1,7 @@
 # CONFIG:
 # {
 #   "model_type": "ltx-video",
+#   "model_name": "LTX-Video",
 #   "diffusers_path": "/workspace/training_models/LTX-Video",
 #   "dtype": "bfloat16",
 #   "transformer_dtype": "float8",
@@ -9,4 +10,6 @@
 
 mkdir -p /workspace/training_models
 
-/hfd.sh LTX-Video -d /workspace/training_models
+cd /workspace/training_models
+
+bash /hfd.sh "Lightricks/LTX-Video"

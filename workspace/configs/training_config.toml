@@ -1,0 +1,51 @@
+output_dir = "workspace/outputs"
+dataset = "workspace/configs/dataset_config.toml"
+epochs = 1000
+micro_batch_size_per_gpu = 1
+gradient_accumulation_steps = 4
+gradient_clipping = 1
+warmup_steps = 100
+blocks_to_swap = 0
+eval_every_n_epochs = 1
+eval_before_first_step = true
+eval_micro_batch_size_per_gpu = 1
+eval_gradient_accumulation_steps = 1
+save_every_n_epochs = 2
+checkpoint_every_n_minutes = 120
+activation_checkpointing = true
+partition_method = "parameters"
+save_dtype = "bfloat16"
+caching_batch_size = 1
+steps_per_print = 1
+video_clip_mode = "single_middle"
+pipeline_stages = 1
+
+[model]
+type = "ltx-video"
+transformer_path = ""
+vae_path = ""
+llm_path = ""
+clip_path = ""
+dtype = "bfloat16"
+transformer_dtype = "float8"
+timestep_sample_method = "logit_normal"
+
+[adapter]
+type = "lora"
+rank = 32
+lora_dtype = "bfloat16"
+only_double_blocks = false
+
+[optimizer]
+type = "adamw_optimi"
+lr = 2e-5
+betas = [ 0.9, 0.99,]
+weight_decay = 0.01
+eps = 1e-8
+
+[monitoring]
+log_dir = "workspace/outputs"
+enable_wandb = false
+wandb_run_name = ""
+wandb_tracker_name = ""
+wandb_api_key = ""

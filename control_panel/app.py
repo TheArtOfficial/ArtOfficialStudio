@@ -115,6 +115,10 @@ training_tool_output = {
     "output": []
 }
 
+# Add this near the top of the file with other global variables
+training_tool_process = None
+training_tool_thread = None
+
 # -------------------------------------------------------------------------
 # Helper Functions
 # -------------------------------------------------------------------------
@@ -570,13 +574,120 @@ def index():
                          hf_form=HuggingFaceForm(),
                          download_scripts=download_scripts)
 
+def run_training_tool_installation(script_path, tool):
+    global training_tool_process, training_tool_output
+    
+    try:
+        print(f"DEBUG: Running script: {script_path}")
+        # Run the script and capture output
+        process = subprocess.Popen(
+            [script_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            bufsize=1,
+            universal_newlines=True
+        )
+        training_tool_process = process
+        
+        # Set a timeout for reading output
+        timeout = 30  # seconds
+        last_output_time = time.time()
+        
+        # Read output line by line
+        while True:
+            # Check if process has finished
+            if process.poll() is not None:
+                break
+                
+            # Check if we've been waiting too long for output
+            current_time = time.time()
+            if current_time - last_output_time > timeout:
+                # Process is still running but no output for a while
+                training_tool_output["output"].append(f"[{time.strftime('%H:%M:%S')}] Waiting for process to continue...")
+                last_output_time = current_time
+                continue
+                
+            # Try to read a line with a short timeout
+            try:
+                line = process.stdout.readline()
+                if line:
+                    try:
+                        decoded_line = line.strip()
+                        training_tool_output["output"].append(decoded_line)
+                        print(f"DEBUG: Output line: {decoded_line}")
+                        last_output_time = time.time()
+                        
+                        # Check for Gradio server startup message
+                        if "Running on local URL" in decoded_line or "Running on public URL" in decoded_line:
+                            training_tool_output.update({
+                                "status": "completed",
+                                "message": f"{tool} installed and server started successfully"
+                            })
+                            return
+                    except Exception as e:
+                        print(f"Warning: Error processing line: {e}")
+                        training_tool_output["output"].append("[Error processing output line]")
+            except Exception as e:
+                print(f"Warning: Error reading output: {e}")
+                continue
+        
+        # Process has finished
+        if process.returncode == 0:
+            training_tool_output.update({
+                "status": "completed",
+                "message": f"{tool} installed successfully"
+            })
+        else:
+            error_msg = f"Installation failed with return code {process.returncode}"
+            print(f"DEBUG: {error_msg}")
+            training_tool_output.update({
+                "status": "error",
+                "message": error_msg
+            })
+            
+    except Exception as e:
+        error_msg = str(e)
+        print(f"DEBUG: Exception in run_training_tool_installation: {error_msg}")
+        training_tool_output.update({
+            "status": "error",
+            "message": error_msg
+        })
+    finally:
+        training_tool_process = None
+
 @app.route('/install_training_tool', methods=['POST'])
 def install_training_tool():
+    global training_tool_thread
+    
     tool = request.form.get('tool')
     try:
+        # Construct and verify the script path
         script_path = str(SCRIPTS_PATH / f"training_tool_scripts/{tool}_setup.sh")
+        print(f"DEBUG: Looking for script at: {script_path}")
+        print(f"DEBUG: SCRIPTS_PATH: {SCRIPTS_PATH}")
+        print(f"DEBUG: Tool name: {tool}")
+        
+        # Check if the scripts directory exists
+        if not os.path.exists(SCRIPTS_PATH):
+            error_msg = f"Scripts directory not found at {SCRIPTS_PATH}"
+            print(f"ERROR: {error_msg}")
+            return jsonify({'status': 'error', 'message': error_msg}), 404
+            
+        # Check if the training_tool_scripts directory exists
+        training_scripts_dir = SCRIPTS_PATH / "training_tool_scripts"
+        if not os.path.exists(training_scripts_dir):
+            error_msg = f"Training tools directory not found at {training_scripts_dir}"
+            print(f"ERROR: {error_msg}")
+            return jsonify({'status': 'error', 'message': error_msg}), 404
+            
+        # Check if the script exists
         if not os.path.exists(script_path):
-            return jsonify({'status': 'error', 'message': f'Setup script not found for {tool}'}), 404
+            error_msg = f"Setup script not found for {tool} at {script_path}"
+            print(f"ERROR: {error_msg}")
+            # List available scripts for debugging
+            available_scripts = [f for f in os.listdir(training_scripts_dir) if f.endswith('_setup.sh')]
+            print(f"DEBUG: Available scripts: {available_scripts}")
+            return jsonify({'status': 'error', 'message': error_msg}), 404
         
         # Reset status
         training_tool_output.update({
@@ -585,41 +696,28 @@ def install_training_tool():
             "output": []
         })
         
-        # Run the script and capture output
-        process = subprocess.Popen(
-            [script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
+        # Start installation in a separate thread
+        training_tool_thread = threading.Thread(
+            target=run_training_tool_installation,
+            args=(script_path, tool)
         )
+        training_tool_thread.daemon = True
+        training_tool_thread.start()
         
-        # Read output line by line
-        for line in iter(process.stdout.readline, ''):
-            training_tool_output["output"].append(line.strip())
-        
-        process.wait()
-        
-        if process.returncode == 0:
-            training_tool_output.update({
-                "status": "completed",
-                "message": f"{tool} installed successfully"
-            })
-            return jsonify({'status': 'success', 'message': f'{tool} installed successfully'})
-        else:
-            training_tool_output.update({
-                "status": "error",
-                "message": f"Installation failed with return code {process.returncode}"
-            })
-            return jsonify({'status': 'error', 'message': f'Installation failed with return code {process.returncode}'}), 500
+        # Return immediately with a success message
+        return jsonify({
+            'status': 'started',
+            'message': f'Started installing {tool}. Please check the status for updates.'
+        })
             
     except Exception as e:
+        error_msg = str(e)
+        print(f"DEBUG: Exception in install_training_tool: {error_msg}")
         training_tool_output.update({
             "status": "error",
-            "message": str(e)
+            "message": error_msg
         })
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': error_msg}), 500
 
 @app.route('/training_tool_status')
 def training_tool_status():

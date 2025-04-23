@@ -20,4 +20,4 @@ wget -c https://huggingface.co/TheArtOfficialTrainer/cu128Torch128whls/resolve/m
 ./diffpipe_venv/bin/pip install gradio
 # Start Diffusion Pipe UI
 echo "Starting Diffusion Pipe UI..."
-cd /workspace/diffusion-pipe && ./diffpipe_venv/bin/python gradio_interface.py &
+cd /workspace/diffusion-pipe && ./diffpipe_venv/bin/python gradio_interface.py

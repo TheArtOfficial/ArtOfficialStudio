@@ -16,19 +16,20 @@ python -m pip install --upgrade pip
 git clone -b sd3 https://github.com/kohya-ss/sd-scripts.git
 cd sd-scripts
 echo "Installing sd-scripts dependencies..."
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 -qq
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
 pip install -r requirements.txt
 cd ..
 echo "Installing FluxGym dependencies..."
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
-pip install -r requirements.txt -qq
+pip install -r requirements.txt -q
 pip install -U bitsandbytes
-pip install --upgrade --force-reinstall triton==2.2.0 -qq
+pip install --upgrade --force-reinstall triton==2.2.0
 deactivate
 # Start FluxGym
 echo "modifying gradio port"
 sed -i 's/demo\.launch(debug=True, show_error=True, allowed_paths=\[cwd\])/demo.launch(debug=True, show_error=True, allowed_paths=\[cwd\], server_port=7000, server_name="0.0.0.0")/' app.py
 echo "Starting FluxGym..."
-cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py &
+cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py
+echo "FluxGym setup complete."
