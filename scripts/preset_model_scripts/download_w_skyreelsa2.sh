@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: SkyreelsA2
+# Model: Skyreels A2 Demo
 # Requires-HF-Token: false
 echo "Downloading VACE, Skyreels, and Recam models..."
 

@@ -15,8 +15,14 @@ source venv/bin/activate
 
 # Install packages one by one with error handling
 echo "Installing PyTorch..."
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 || { echo "Failed to install PyTorch"; exit 1; }
-
+CUDA_VERSION=$(nvidia-smi | grep -oP "CUDA Version: \K[0-9]+\.[0-9]+")
+echo "CUDA Version: $CUDA_VERSION"
+# Set appropriate PyTorch index URL
+if [[ "$CUDA_VERSION" == "12.8" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+fi
 echo "Installing requirements..."
 pip install -r requirements.txt
 

@@ -7,6 +7,8 @@ cd /workspace
 
 # Set up FluxGym
 echo "Setting up FluxGym..."
+CUDA_VERSION=$(nvidia-smi | grep -oP "CUDA Version: \K[0-9]+\.[0-9]+")
+echo "CUDA Version: $CUDA_VERSION"
 cd /workspace
 git clone https://github.com/cocktailpeanut/fluxgym.git
 cd fluxgym
@@ -16,7 +18,13 @@ python -m pip install --upgrade pip
 git clone -b sd3 https://github.com/kohya-ss/sd-scripts.git
 cd sd-scripts
 echo "Installing sd-scripts dependencies..."
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+# Set appropriate PyTorch index URL
+if [[ "$CUDA_VERSION" == "12.8" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+fi
+./diffpipe_venv/bin/pip install --pre torch torchvision torchaudio --index-url $TORCH_INDEX_URL
 pip install -r requirements.txt
 cd ..
 echo "Installing FluxGym dependencies..."

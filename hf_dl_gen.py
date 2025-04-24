@@ -135,7 +135,7 @@ def generate_download_script(repo_id: str, files: List[str], output_path: str, m
         
         script_lines.append(f"# Download {file_path}")
         script_lines.append(f"aria2c -x 16 -s 16 -d \"/workspace/ComfyUI/models\" \\\n"
-                           f"    -o \"{filename}\" \\\n"
+                           f"    -o \"{filename}\" --auto-file-renaming=false --conditional-get=true \\\n"
                            f"    \"{download_url}\"")
         script_lines.append("")
     

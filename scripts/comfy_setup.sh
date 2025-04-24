@@ -8,7 +8,15 @@ git reset --hard origin/master
 python3.12 -m venv comfyui_venv
 ./comfyui_venv/bin/python -m pip install --upgrade pip -qq
 echo "Installing ComfyUI requirements, this may take up to 5mins..."
-./comfyui_venv/bin/pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 -qq
+CUDA_VERSION=$(nvidia-smi | grep -oP "CUDA Version: \K[0-9]+\.[0-9]+")
+echo "CUDA Version: $CUDA_VERSION"
+# Set appropriate PyTorch index URL
+if [[ "$CUDA_VERSION" == "12.8" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+fi
+./comfyui_venv/bin/pip install --pre torch torchvision torchaudio --index-url $TORCH_INDEX_URL -qq
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
@@ -28,7 +36,7 @@ mkdir -p models/text_encoders
 # Set up directory structure
 echo "Setting up directory structure..."
 mkdir -p /workspace/ComfyUI/user/default/workflows
-cp -r /workspace/workflows/* /workspace/ComfyUI/user/default/workflows
+cp -r /workflows/* /workspace/ComfyUI/user/default/workflows
 # rm -rf /workspace/workflows
 
 # Install ComfyUI nodes
@@ -85,6 +93,8 @@ git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
 cd ComfyUI-WanVideoWrapper
 git fetch origin
 git reset --hard origin/main
+git switch -c dev --track origin/dev
+git pull
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd ..
 
