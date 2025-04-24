@@ -91,7 +91,7 @@ setup_ssh
 execute_script "/scripts/comfy_setup.sh" "Running ComfyUI setup script..."
 echo "ComfyUI Ready on port 0.0.0.0:$COMFYUI_PORT"
 # Start JupyterLab
-jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.allow_origin='*' --NotebookApp.token='' --ServerApp.preferred_dir=/workspace --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}' &
+jupyter lab --ip=0.0.0.0 --port=$JUPYTER_PORT --no-browser --allow-root --NotebookApp.allow_origin='*' --NotebookApp.token='' --ServerApp.preferred_dir=/workspace --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}' &
 echo "JupyterLab started"
 export_env_vars
 

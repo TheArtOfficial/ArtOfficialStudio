@@ -39,5 +39,5 @@ echo "Updating bitsandbytes..."
 pip install -U bitsandbytes
 
 echo "Starting kohya_gui..."
-python kohya_gui.py --listen 0.0.0.0 --server_port 6000 --inbrowser --share --noverify
+python kohya_gui.py --listen 0.0.0.0 --server_port $KOHYA_UI_PORT --inbrowser --share --noverify
 echo "Kohya_SS setup complete."

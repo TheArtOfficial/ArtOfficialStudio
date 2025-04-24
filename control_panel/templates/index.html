@@ -328,6 +328,7 @@
             <button class="nav-link" id="training-tab" data-bs-toggle="tab" data-bs-target="#training" type="button" role="tab">Training Tools</button>
             <button class="nav-link" id="civitai-tab" data-bs-toggle="tab" data-bs-target="#civitai" type="button" role="tab">CivitAI Downloader</button>
             <button class="nav-link" id="huggingface-tab" data-bs-toggle="tab" data-bs-target="#huggingface" type="button" role="tab">HuggingFace Downloader</button>
+            <button class="nav-link" id="local-links-tab" data-bs-toggle="tab" data-bs-target="#local-links" type="button" role="tab">Local Links</button>
         </nav>
 
         <div class="tab-content" id="myTabContent">
@@ -519,6 +520,67 @@
                     </div>
                     <div id="hfLog" class="log-container"></div>
                     <button id="hfStopButton" class="btn btn-danger mt-3 d-none">Stop Download</button>
+                </div>
+            </div>
+
+            <!-- Local Links Tab -->
+            <div class="tab-pane fade" id="local-links" role="tabpanel">
+                <h3>Local Tool Links</h3>
+                <p>Use these links to access services from your local machine.</p>
+                
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Service</th>
+                                <th>URL</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Control Panel</td>
+                                <td><a href="http://127.0.0.1:5000" target="_blank">http://127.0.0.1:5000</a></td>
+                                <td>This control panel for model downloads and training tools</td>
+                            </tr>
+                            <tr>
+                                <td>FluxGym</td>
+                                <td><a href="http://127.0.0.1:6000" target="_blank">http://127.0.0.1:6000</a></td>
+                                <td>Training environment specialized for Flux Loras (Download/Run from Training Tools Tab First)</td>
+                            </tr>
+                            <tr>
+                                <td>Diffusion Pipeline UI</td>
+                                <td><a href="http://127.0.0.1:7000" target="_blank">http://127.0.0.1:7000</a></td>
+                                <td>Lora training for multiple diffusion models (Download/Run from Training Tools Tab First)</td>
+                            </tr>
+                            <tr>
+                                <td>Kohya_SS</td>
+                                <td><a href="http://127.0.0.1:8000" target="_blank">http://127.0.0.1:8000</a></td>
+                                <td>Lora Training for SD15, SDXL, SD3, and Flux (Download/Run from Training Tools Tab First)</td>
+                            </tr>
+                            <tr>
+                                <td>TensorBoard</td>
+                                <td><a href="http://127.0.0.1:6006" target="_blank">http://127.0.0.1:6006</a></td>
+                                <td>Visualization toolkit for ML experiments</td>
+                            </tr>
+                            <tr>
+                                <td>ComfyUI</td>
+                                <td><a href="http://127.0.0.1:8188" target="_blank">http://127.0.0.1:8188</a></td>
+                                <td>Node-based UI for Stable Diffusion</td>
+                            </tr>
+                            <tr>
+                                <td>Jupyter Lab</td>
+                                <td><a href="http://127.0.0.1:8888" target="_blank">http://127.0.0.1:8888</a></td>
+                                <td>Web-based filesystem manager for viewing/editing/downloading files inside the container</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Note:</strong> Make sure you've port forwarded these ports to your local machine if you're using a remote server.<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Or if using a cloud provider, open the port sites through whichever webpage the service provides.
                 </div>
             </div>
         </div>
