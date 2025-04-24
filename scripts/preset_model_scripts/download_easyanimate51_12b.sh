@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: Easy Animate 5.1 12B (39GB)
+# Model: Easy Animate 5.1 12B
 
 echo "Downloading files from HuggingFace repository alibaba-pai/EasyAnimateV5.1-12b-zh-Control-diffusers..."
 
