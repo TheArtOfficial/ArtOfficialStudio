@@ -85,7 +85,8 @@ model_download_status = {
     "total_models": 0,
     "completed_models": 0,
     "script_name": "",
-    "display_name": ""
+    "display_name": "",
+    "existing_files_count": 0
 }
 
 huggingface_download_status = {
@@ -924,6 +925,44 @@ def run_model_download(script_path, script_name, display_name, token=None):
                     line = output.strip()
                     print(f"DEBUG: aria2c output: {line}")
                     
+                    # Skip status legend messages
+                    if line.startswith('Status Legend:'):
+                        continue
+                    
+                    # If all files already exist, we'll see a pattern of completed messages without downloads
+                    if line.endswith("file already exists."):
+                        # We'll let our Completed download message handle the status updates
+                        print(f"DEBUG: File already exists detected: {line}")
+                        
+                    # Check for aria2c file already exists message - expanded patterns to catch all variations
+                    if ("file already exists" in line or 
+                        "download completed" in line or 
+                        "already downloaded" in line or
+                        "already exists" in line or
+                        "resume download not supported" in line):
+                        print(f"DEBUG: Detected file already exists: {line}")
+                        
+                        # If we've detected all files already exist
+                        total_commands = len(commands)
+                        existing_files_count = model_download_status.get("existing_files_count", 0) + 1
+                        model_download_status["existing_files_count"] = existing_files_count
+                        
+                        # If all files exist, update the message
+                        if existing_files_count == total_commands:
+                            model_download_status.update({
+                                "status": "completed",
+                                "message": "All files already exist. No download required.",
+                                "progress": 100,
+                                "downloaded": "0B",
+                                "total": "0B",
+                                "speed": "0B/s",
+                                "eta": "N/A"
+                            })
+                        
+                        # File already exists will be followed by a "Completed download" message from our script
+                        # No need to update status here
+                        continue
+                    
                     downloaded, total, percent, speed, eta = parse_aria2c_output(line)
                     if downloaded and total and percent is not None:
                         model_download_status.update({
@@ -978,9 +1017,12 @@ def run_model_download(script_path, script_name, display_name, token=None):
         model_current_process = None
 
 def run_model_downloads(model_infos, token=None):
-    global model_download_status, model_download_thread
+    global model_download_status, model_download_thread, model_current_process
     
     try:
+        # Reset status counters
+        model_download_status["existing_files_count"] = 0
+        
         # Check if we should stop before starting
         if model_download_status.get('status') == 'stopped':
             return
@@ -993,7 +1035,11 @@ def run_model_downloads(model_infos, token=None):
             model_download_status.update({
                 "status": "completed",
                 "message": "All files already downloaded. No download required.",
-                "progress": 100
+                "progress": 100,
+                "downloaded": "0B",
+                "total": "0B",
+                "speed": "0B/s",
+                "eta": "N/A"
             })
             return
             
@@ -1032,12 +1078,26 @@ def run_model_downloads(model_infos, token=None):
         temp_script = "/tmp/batch_download.sh"
         with open(temp_script, 'w') as f:
             f.write("#!/bin/bash\n")
-            for cmd in commands:
+            f.write("set -e\n")  # Exit on error
+            
+            # Track overall progress
+            f.write("total_files=" + str(len(commands)) + "\n")
+            f.write("current_file=1\n")
+            
+            # Run each command sequentially (without the & at the end)
+            for i, cmd in enumerate(commands):
                 # Add force flag if needed to re-download existing files
                 if need_force_download and '--allow-overwrite=true' not in cmd:
                     cmd = cmd.replace('aria2c', 'aria2c --allow-overwrite=true')
-                f.write(f"{cmd} &\n")  # Run each command in background
-            f.write("wait\n")  # Wait for all background processes
+                
+                # Add progress message before each download
+                f.write(f'echo "Starting download {i+1}/{len(commands)}..."\n')
+                f.write(f"{cmd}\n")  # Run command without & to make it sequential
+                
+                # After each command completes, increment the counter
+                f.write('current_file=$((current_file + 1))\n')
+                f.write('echo "Completed download $((current_file - 1))/$total_files"\n')
+            
         os.chmod(temp_script, 0o755)
         
         # Run all commands in a single subprocess with its own process group
@@ -1080,8 +1140,63 @@ def run_model_downloads(model_infos, token=None):
                 line = output.strip()
                 print(f"DEBUG: aria2c output: {line}")
                 
+                # Check for our custom progress messages
+                if line.startswith("Starting download "):
+                    parts = line.split("download ")[1].split("/")
+                    current_file = int(parts[0])
+                    total_files = int(parts[1].strip("..."))
+                    
+                    model_download_status.update({
+                        "current_file": current_file,
+                        "message": f"Starting download {current_file}/{total_files}..."
+                    })
+                    continue
+                
+                if line.startswith("Completed download "):
+                    parts = line.split("download ")[1].split("/")
+                    completed = int(parts[0])
+                    total = int(parts[1])
+                    
+                    # Update completed count and calculate progress percentage
+                    model_download_status["completed_models"] = completed
+                    percent = int(100 * completed / total)
+                    
+                    model_download_status.update({
+                        "progress": percent,
+                        "message": f"Completed download {completed}/{total}"
+                    })
+                    
+                    # If all downloads complete, mark as finished
+                    if completed == total:
+                        # If all files exist, update with appropriate message
+                        if model_download_status.get("existing_files_count", 0) == total:
+                            model_download_status.update({
+                                "status": "completed",
+                                "message": "All files already exist. No download required.",
+                                "progress": 100,
+                                "downloaded": "0B",
+                                "total": "0B",
+                                "speed": "0B/s",
+                                "eta": "N/A"
+                            })
+                        else:
+                            model_download_status.update({
+                                "status": "completed",
+                                "message": "All downloads completed successfully!",
+                                "progress": 100
+                            })
+                    continue
+                
                 # Skip status legend messages
                 if line.startswith('Status Legend:'):
+                    continue
+                
+                # If all files already exist, we'll see a pattern of completed messages without downloads
+                if line.endswith("file already exists."):
+                    # Count this as an existing file
+                    existing_files_count = model_download_status.get("existing_files_count", 0) + 1
+                    model_download_status["existing_files_count"] = existing_files_count
+                    print(f"DEBUG: File already exists detected: {line}, count: {existing_files_count}/{len(commands)}")
                     continue
                 
                 # Check for aria2c file already exists message - expanded patterns to catch all variations
@@ -1090,27 +1205,17 @@ def run_model_downloads(model_infos, token=None):
                     "already downloaded" in line or
                     "already exists" in line or
                     "resume download not supported" in line):
-                    # Count this as a completed file
-                    model_download_status["completed_models"] += 1
-                    percent = int(100 * model_download_status["completed_models"] / len(commands))
-                    model_download_status.update({
-                        "progress": percent,
-                        "message": f"File already exists ({model_download_status['completed_models']}/{len(commands)})"
-                    })
+                    print(f"DEBUG: Detected file already exists: {line}")
                     
-                    # If all files already exist, mark as complete
-                    if model_download_status["completed_models"] == len(commands):
-                        model_download_status.update({
-                            "status": "completed",
-                            "message": "All files already exist. No download required.",
-                            "progress": 100,
-                            "downloaded": "0B",
-                            "total": "0B",
-                            "speed": "0B/s",
-                            "eta": "N/A"
-                        })
+                    # Count as an existing file
+                    existing_files_count = model_download_status.get("existing_files_count", 0) + 1
+                    model_download_status["existing_files_count"] = existing_files_count
+                    print(f"DEBUG: File already exists count: {existing_files_count}/{len(commands)}")
+                    
+                    # File already exists will be followed by a "Completed download" message from our script
+                    # No need to update status here
                     continue
-                    
+                
                 downloaded, total, percent, speed, eta = parse_aria2c_output(line)
                 if downloaded and total and percent is not None:
                     # Only update current_file when a new download starts (percent = 0)
@@ -1125,24 +1230,15 @@ def run_model_downloads(model_infos, token=None):
                         "eta": eta,
                         "message": f"Downloading file {model_download_status['current_file']}/{len(commands)}... {percent}%"
                     })
-                    
-                    if percent == 100:
-                        model_download_status["completed_models"] += 1
-                        if model_download_status["completed_models"] == len(commands):
-                            model_download_status.update({
-                                "status": "completed",
-                                "message": "All downloads completed successfully!",
-                                "progress": 100
-                            })
                 elif line == '(OK):download completed.':
                     # Handle the final completion message
-                    if model_download_status.get('progress') == 100:
+                    if model_download_status["completed_models"] == len(commands):
                         model_download_status.update({
                             "status": "completed",
                             "message": "All downloads completed successfully!",
                             "progress": 100
                         })
-        
+                
         # Check for errors
         stderr_output = model_current_process.stderr.read()
         if stderr_output:
