@@ -1,4 +1,6 @@
 {
+  "id": "02661845-39f3-4d3d-9840-e5338c4f3b81",
+  "revision": 0,
   "last_node_id": 90,
   "last_link_id": 245,
   "nodes": [
@@ -50,10 +52,10 @@
         {
           "name": "CONDITIONING",
           "type": "CONDITIONING",
+          "slot_index": 0,
           "links": [
             238
-          ],
-          "slot_index": 0
+          ]
         }
       ],
       "properties": {
@@ -110,7 +112,7 @@
       ],
       "size": [
         315,
-        222
+        242
       ],
       "flags": {},
       "order": 7,
@@ -118,12 +120,18 @@
       "inputs": [
         {
           "name": "vae",
-          "type": "VAE",
+          "type": "WANVAE",
           "link": 240
         },
         {
           "name": "image",
           "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "mask",
+          "shape": 7,
+          "type": "MASK",
           "link": null
         }
       ],
@@ -135,6 +143,7 @@
         }
       ],
       "properties": {
+        "aux_id": "kijai/ComfyUI-WanVideoWrapper",
         "ver": "209c65ba41993c7a9425697f217990df9d13d6d2",
         "Node name for S&R": "WanVideoEncode"
       },
@@ -157,7 +166,7 @@
       ],
       "size": [
         218.82891845703125,
-        460.544677734375
+        334
       ],
       "flags": {},
       "order": 10,
@@ -170,20 +179,20 @@
         },
         {
           "name": "audio",
-          "type": "AUDIO",
           "shape": 7,
+          "type": "AUDIO",
           "link": null
         },
         {
           "name": "meta_batch",
-          "type": "VHS_BatchManager",
           "shape": 7,
+          "type": "VHS_BatchManager",
           "link": null
         },
         {
           "name": "vae",
-          "type": "VAE",
           "shape": 7,
+          "type": "VAE",
           "link": null
         }
       ],
@@ -195,9 +204,10 @@
         }
       ],
       "properties": {
-        "cnr_id": "comfyui-videohelpersuite",
+        "aux_id": "Kosinkadink/ComfyUI-VideoHelperSuite",
         "ver": "124c913ccdd8a585734ea758c35fa1bab8499c99",
-        "Node name for S&R": "VHS_VideoCombine"
+        "Node name for S&R": "VHS_VideoCombine",
+        "cnr_id": "comfyui-videohelpersuite"
       },
       "widgets_values": {
         "frame_rate": 16,
@@ -255,10 +265,10 @@
         {
           "name": "IMAGE",
           "type": "IMAGE",
+          "slot_index": 0,
           "links": [
             245
-          ],
-          "slot_index": 0
+          ]
         }
       ],
       "properties": {
@@ -308,10 +318,10 @@
         {
           "name": "LATENT",
           "type": "LATENT",
+          "slot_index": 0,
           "links": [
             242
-          ],
-          "slot_index": 0
+          ]
         }
       ],
       "properties": {
@@ -327,117 +337,6 @@
         "euler",
         "linear_quadratic",
         1
-      ]
-    },
-    {
-      "id": 12,
-      "type": "UNETLoader",
-      "pos": [
-        -722.2779541015625,
-        342.7552795410156
-      ],
-      "size": [
-        350,
-        82
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "shape": 3,
-          "links": [
-            225
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.15",
-        "Node name for S&R": "UNETLoader"
-      },
-      "widgets_values": [
-        "wan/Wan2_1-T2V-1_3B_fp8_e4m3fn.safetensors",
-        "fp8_e4m3fn"
-      ],
-      "color": "#223",
-      "bgcolor": "#335"
-    },
-    {
-      "id": 80,
-      "type": "CLIPLoader",
-      "pos": [
-        -686.9423217773438,
-        499.2804870605469
-      ],
-      "size": [
-        315,
-        82
-      ],
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "CLIP",
-          "type": "CLIP",
-          "links": [
-            226,
-            227
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.15",
-        "Node name for S&R": "CLIPLoader"
-      },
-      "widgets_values": [
-        "wan/native_umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-        "wan",
-        "default"
-      ]
-    },
-    {
-      "id": 10,
-      "type": "VAELoader",
-      "pos": [
-        -178.99188232421875,
-        329.1573791503906
-      ],
-      "size": [
-        350,
-        60
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "VAE",
-          "type": "VAE",
-          "shape": 3,
-          "links": [
-            240,
-            243
-          ],
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.3.15",
-        "Node name for S&R": "VAELoader"
-      },
-      "widgets_values": [
-        "wan/native_wan_2.1_vae.safetensors"
       ]
     },
     {
@@ -465,10 +364,10 @@
         {
           "name": "CONDITIONING",
           "type": "CONDITIONING",
+          "slot_index": 0,
           "links": [
             237
-          ],
-          "slot_index": 0
+          ]
         }
       ],
       "properties": {
@@ -478,6 +377,115 @@
       },
       "widgets_values": [
         "A gorilla sitting down at the dinner table with a family"
+      ]
+    },
+    {
+      "id": 12,
+      "type": "UNETLoader",
+      "pos": [
+        -722.2779541015625,
+        342.7552795410156
+      ],
+      "size": [
+        350,
+        82
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "slot_index": 0,
+          "links": [
+            225
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.15",
+        "Node name for S&R": "UNETLoader"
+      },
+      "widgets_values": [
+        "wan2.1_t2v_1.3B_fp16.safetensors",
+        "fp8_e4m3fn"
+      ],
+      "color": "#223",
+      "bgcolor": "#335"
+    },
+    {
+      "id": 80,
+      "type": "CLIPLoader",
+      "pos": [
+        -686.9423217773438,
+        499.2804870605469
+      ],
+      "size": [
+        315,
+        106
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "slot_index": 0,
+          "links": [
+            226,
+            227
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.15",
+        "Node name for S&R": "CLIPLoader"
+      },
+      "widgets_values": [
+        "native_umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+        "wan",
+        "default"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "VAELoader",
+      "pos": [
+        -178.99188232421875,
+        329.1573791503906
+      ],
+      "size": [
+        350,
+        60
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "slot_index": 0,
+          "links": [
+            240,
+            243
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.15",
+        "Node name for S&R": "VAELoader"
+      },
+      "widgets_values": [
+        "native_wan_2.1_vae.safetensors"
       ]
     }
   ],
@@ -567,18 +575,19 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.6830134553650705,
+      "scale": 0.9090909090909091,
       "offset": [
-        777.9043790301207,
-        -186.28481884633942
+        763.0196474471012,
+        -192.89862773589613
       ]
     },
     "groupNodes": {},
     "ue_links": [],
-    "VHS_latentpreview": true,
+    "VHS_latentpreview": false,
     "VHS_latentpreviewrate": 0,
     "VHS_MetadataImage": true,
-    "VHS_KeepIntermediate": true
+    "VHS_KeepIntermediate": true,
+    "frontendVersion": "1.17.11"
   },
   "version": 0.4
 }

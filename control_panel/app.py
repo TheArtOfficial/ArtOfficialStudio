@@ -283,11 +283,11 @@ def extract_aria2c_commands(script_path):
                 elif current_command and line.endswith('\\'):
                     add_line = line[:-1]
                     current_command += ' ' + add_line
-                elif current_command:
+                elif current_command and not line.startswith('echo'):
                     current_command += ' ' + line
                     
-            # Add the last command if exists
-            if current_command:
+            # Add the last command if exists and it's an aria2c command
+            if current_command and current_command.startswith('aria2c'):
                 current_command = current_command.replace('\\', '')
                 current_command = current_command.replace('  ', ' ')
                 commands.append(current_command)
@@ -1009,7 +1009,7 @@ def run_model_downloads(model_infos, token=None):
             "completed_models": 0
         })
         
-        # Run each model download
+        # Run each model download sequentially
         for i, (script_path, script_name, model_info) in enumerate(model_infos):
             if model_download_status.get('status') == 'stopped':
                 return
@@ -1029,12 +1029,13 @@ def run_model_downloads(model_infos, token=None):
             # Update completed count
             model_download_status["completed_models"] += 1
             
-        # All downloads completed successfully
-        model_download_status.update({
-            "status": "completed",
-            "message": "All downloads completed successfully!",
-            "progress": 100
-        })
+            # If this was the last model, mark as completed
+            if i == len(model_infos) - 1:
+                model_download_status.update({
+                    "status": "completed",
+                    "message": "All downloads completed successfully!",
+                    "progress": 100
+                })
         
     except Exception as e:
         print(f"Error in run_model_downloads: {e}")
