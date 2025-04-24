@@ -248,53 +248,54 @@ def run_civitai_download(url, model_type, filename, token):
     finally:
         civitai_current_process = None
 
-def extract_aria2c_commands(script_path):
+def extract_aria2c_commands(script_paths):
     """
-    Extract aria2c commands from a download script.
+    Extract aria2c commands from multiple download scripts.
     
     Args:
-        script_path: Path to the script containing aria2c commands
+        script_paths: List of paths to the download scripts
         
     Returns:
         list: List of extracted aria2c commands
     """
-    print(f"DEBUG: Extracting commands from {script_path}")
+    print(f"DEBUG: Extracting commands from {len(script_paths)} scripts")
     commands = []
     
     try:
-        with open(script_path, 'r') as f:
-            current_command = None
-            
-            for line in f:
-                line = line.strip()
+        for script_path in script_paths:
+            with open(script_path, 'r') as f:
+                current_command = None
                 
-                # Skip empty lines and comments
-                if not line or line.startswith('#'):
-                    continue
+                for line in f:
+                    line = line.strip()
                     
-                # Check if line starts with aria2c
-                if line.startswith('aria2c'):
-                    if current_command:
-                        current_command = current_command.replace('\\', '')
-                        current_command = current_command.replace('  ', ' ')
-                        commands.append(current_command)
-                    current_command = line
-                # Handle command continuation
-                elif current_command and line.endswith('\\'):
-                    add_line = line[:-1]
-                    current_command += ' ' + add_line
-                elif current_command and not line.startswith('echo'):
-                    current_command += ' ' + line
+                    # Skip empty lines and comments
+                    if not line or line.startswith('#'):
+                        continue
+                        
+                    # Check if line starts with aria2c
+                    if line.startswith('aria2c'):
+                        if current_command:
+                            current_command = current_command.replace('\\', '')
+                            current_command = current_command.replace('  ', ' ')
+                            commands.append(current_command)
+                        current_command = line
+                    # Handle command continuation
+                    elif current_command and line.endswith('\\'):
+                        add_line = line[:-1]
+                        current_command += ' ' + add_line
+                    elif current_command and not line.startswith('echo'):
+                        current_command += ' ' + line
+                        
+                # Add the last command if exists and it's an aria2c command
+                if current_command and current_command.startswith('aria2c'):
+                    current_command = current_command.replace('\\', '')
+                    current_command = current_command.replace('  ', ' ')
+                    commands.append(current_command)
                     
-            # Add the last command if exists and it's an aria2c command
-            if current_command and current_command.startswith('aria2c'):
-                current_command = current_command.replace('\\', '')
-                current_command = current_command.replace('  ', ' ')
-                commands.append(current_command)
-                
-        print(f"DEBUG: Found {len(commands)} aria2c commands")
+        print(f"DEBUG: Found {len(commands)} total aria2c commands")
     except Exception as e:
-        print(f"DEBUG: Error extracting aria2c commands from {script_path}: {e}")
+        print(f"DEBUG: Error extracting aria2c commands: {e}")
         
     return commands
 
@@ -339,14 +340,6 @@ def update_download_status(status_dict, **kwargs):
     status_dict.update(kwargs)
 
 def run_huggingface_download(url, token=None, download_path=None):
-    """
-    Download a model from a direct URL using aria2c.
-    
-    Args:
-        url: Direct download URL
-        token: HuggingFace API token (optional)
-        download_path: Custom download location (optional)
-    """
     global huggingface_download_status, huggingface_current_process
     
     try:
@@ -985,16 +978,25 @@ def run_model_download(script_path, script_name, display_name, token=None):
         model_current_process = None
 
 def run_model_downloads(model_infos, token=None):
-    """
-    Run multiple model downloads sequentially.
-    
-    Args:
-        model_infos: List of tuples (script_path, script_name, model_info)
-        token: Optional HuggingFace token
-    """
     global model_download_status, model_download_thread
     
     try:
+        # Check if we should stop before starting
+        if model_download_status.get('status') == 'stopped':
+            return
+            
+        # Extract all aria2c commands from all scripts
+        script_paths = [info[0] for info in model_infos]
+        commands = extract_aria2c_commands(script_paths)
+        
+        if not commands:
+            model_download_status.update({
+                "status": "completed",
+                "message": "All files already downloaded. No download required.",
+                "progress": 100
+            })
+            return
+            
         # Initialize status
         model_download_status.update({
             "status": "downloading",
@@ -1005,38 +1007,171 @@ def run_model_downloads(model_infos, token=None):
             "speed": "0B/s",
             "eta": "Unknown",
             "current_model": "",
-            "total_models": len(model_infos),
-            "completed_models": 0
+            "total_models": len(commands),
+            "completed_models": 0,
+            "current_file": 1
         })
         
-        # Run each model download sequentially
-        for i, (script_path, script_name, model_info) in enumerate(model_infos):
+        # Add token to URLs if needed
+        if token:
+            for i, cmd in enumerate(commands):
+                url_match = re.search(r'["\']?https?://[^\s"\']+(?=["\']|$)', cmd)
+                if url_match:
+                    url = url_match.group(0)
+                    commands[i] = cmd.replace(url_match.group(0), f'--header="Authorization: Bearer {token}" {url}')
+        
+        # Check if force flag is needed for aria2c
+        need_force_download = False
+        for cmd in commands:
+            # Check if any command is missing the -c or --continue flag
+            if all(flag not in cmd for flag in [' -c ', ' -c=', ' --continue ', ' --continue=']):
+                need_force_download = True
+                break
+        
+        # Create a temporary script with all commands
+        temp_script = "/tmp/batch_download.sh"
+        with open(temp_script, 'w') as f:
+            f.write("#!/bin/bash\n")
+            for cmd in commands:
+                # Add force flag if needed to re-download existing files
+                if need_force_download and '--allow-overwrite=true' not in cmd:
+                    cmd = cmd.replace('aria2c', 'aria2c --allow-overwrite=true')
+                f.write(f"{cmd} &\n")  # Run each command in background
+            f.write("wait\n")  # Wait for all background processes
+        os.chmod(temp_script, 0o755)
+        
+        # Run all commands in a single subprocess with its own process group
+        cmd = f"stdbuf -oL {temp_script}"
+        model_current_process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            shell=True,
+            bufsize=1,
+            env=dict(os.environ, PYTHONUNBUFFERED="1"),
+            preexec_fn=os.setsid  # Create new process group
+        )
+        
+        # Process output
+        while True:
+            # Check if we should stop
             if model_download_status.get('status') == 'stopped':
-                return
+                try:
+                    # Get the process group ID and kill it
+                    pgid = os.getpgid(model_current_process.pid)
+                    os.killpg(pgid, signal.SIGTERM)
+                    time.sleep(1)
+                except:
+                    pass
+                finally:
+                    model_current_process = None
+                    # Clean up the temporary script
+                    try:
+                        os.remove(temp_script)
+                    except:
+                        pass
+                    return
+                    
+            output = model_current_process.stdout.readline()
+            if output == '' and model_current_process.poll() is not None:
+                break
+            if output:
+                line = output.strip()
+                print(f"DEBUG: aria2c output: {line}")
                 
-            # Update status for current model
+                # Skip status legend messages
+                if line.startswith('Status Legend:'):
+                    continue
+                
+                # Check for aria2c file already exists message - expanded patterns to catch all variations
+                if ("file already exists" in line or 
+                    "download completed" in line or 
+                    "already downloaded" in line or
+                    "already exists" in line or
+                    "resume download not supported" in line):
+                    # Count this as a completed file
+                    model_download_status["completed_models"] += 1
+                    percent = int(100 * model_download_status["completed_models"] / len(commands))
+                    model_download_status.update({
+                        "progress": percent,
+                        "message": f"File already exists ({model_download_status['completed_models']}/{len(commands)})"
+                    })
+                    
+                    # If all files already exist, mark as complete
+                    if model_download_status["completed_models"] == len(commands):
+                        model_download_status.update({
+                            "status": "completed",
+                            "message": "All files already exist. No download required.",
+                            "progress": 100,
+                            "downloaded": "0B",
+                            "total": "0B",
+                            "speed": "0B/s",
+                            "eta": "N/A"
+                        })
+                    continue
+                    
+                downloaded, total, percent, speed, eta = parse_aria2c_output(line)
+                if downloaded and total and percent is not None:
+                    # Only update current_file when a new download starts (percent = 0)
+                    if percent == 0 and model_download_status["current_file"] < len(commands):
+                        model_download_status["current_file"] = model_download_status["completed_models"] + 1
+                    
+                    model_download_status.update({
+                        "downloaded": downloaded,
+                        "total": total,
+                        "progress": percent,
+                        "speed": speed + "/s",
+                        "eta": eta,
+                        "message": f"Downloading file {model_download_status['current_file']}/{len(commands)}... {percent}%"
+                    })
+                    
+                    if percent == 100:
+                        model_download_status["completed_models"] += 1
+                        if model_download_status["completed_models"] == len(commands):
+                            model_download_status.update({
+                                "status": "completed",
+                                "message": "All downloads completed successfully!",
+                                "progress": 100
+                            })
+                elif line == '(OK):download completed.':
+                    # Handle the final completion message
+                    if model_download_status.get('progress') == 100:
+                        model_download_status.update({
+                            "status": "completed",
+                            "message": "All downloads completed successfully!",
+                            "progress": 100
+                        })
+        
+        # Check for errors
+        stderr_output = model_current_process.stderr.read()
+        if stderr_output:
+            print(f"DEBUG: aria2c stderr: {stderr_output}")
+        
+        # Wait for process to complete
+        return_code = model_current_process.wait()
+        print(f"DEBUG: Process completed with return code: {return_code}")
+        
+        if return_code != 0:
             model_download_status.update({
-                "current_model": model_info['name'],
-                "message": f"Downloading {model_info['name']} ({i+1}/{len(model_infos)})..."
+                "status": "error",
+                "message": f"Error during download. Return code: {return_code}"
             })
-            
-            # Run the download
-            success = run_model_download(script_path, script_name, model_info['name'], token)
-            
-            if not success:
-                return
-                
-            # Update completed count
-            model_download_status["completed_models"] += 1
-            
-            # If this was the last model, mark as completed
-            if i == len(model_infos) - 1:
+        else:
+            # Ensure status is set to completed if all downloads finished successfully
+            if model_download_status.get('progress') == 100:
                 model_download_status.update({
                     "status": "completed",
                     "message": "All downloads completed successfully!",
                     "progress": 100
                 })
-        
+            
+        # Clean up temporary script
+        try:
+            os.remove(temp_script)
+        except:
+            pass
+            
     except Exception as e:
         print(f"Error in run_model_downloads: {e}")
         model_download_status.update({
@@ -1045,6 +1180,9 @@ def run_model_downloads(model_infos, token=None):
         })
     finally:
         model_download_thread = None
+        # Only set process to None after status is updated
+        if model_download_status.get('status') in ['completed', 'error']:
+            model_current_process = None
 
 @app.route('/run_download_script', methods=['POST'])
 def run_download_script():
@@ -1091,27 +1229,74 @@ def run_download_script():
 def stop_model_download():
     global model_current_process, model_download_status, model_download_thread
     
-    if model_current_process:
-        try:
-            # Get the process group ID and kill it
-            pgid = os.getpgid(model_current_process.pid)
-            os.killpg(pgid, signal.SIGTERM)
-            time.sleep(1)
-        except Exception as e:
-            print(f"Error stopping download: {e}")
-        finally:
-            model_current_process = None
+    # Store the process in a local variable to avoid race conditions
+    current_process = model_current_process
     
-    # Update status
-    model_download_status.update({
-        "status": "stopped",
-        "message": "Download stopped by user",
-        "progress": 0,
-        "downloaded": "0B",
-        "total": "0B",
-        "speed": "0B/s",
-        "eta": "Unknown"
-    })
+    try:
+        # Update status first to signal the download thread to stop
+        model_download_status.update({
+            "status": "stopped",
+            "message": "Stopping download...",
+            "progress": 0,
+            "downloaded": "0B",
+            "total": "0B",
+            "speed": "0B/s",
+            "eta": "Unknown"
+        })
+        
+        # If we have a process, try to kill it
+        if current_process:
+            try:
+                # Get the process group ID and kill it
+                pgid = os.getpgid(current_process.pid)
+                os.killpg(pgid, signal.SIGTERM)
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error killing process group: {e}")
+        
+        # Clean up the temporary script and any partial downloads
+        try:
+            if os.path.exists("/tmp/batch_download.sh"):
+                os.remove("/tmp/batch_download.sh")
+            # Clean up any .aria2 files
+            for root, dirs, files in os.walk(BASE_PATH):
+                for file in files:
+                    if file.endswith('.aria2'):
+                        try:
+                            os.remove(os.path.join(root, file))
+                        except:
+                            pass
+        except Exception as e:
+            print(f"Error cleaning up files: {e}")
+                
+    except Exception as e:
+        print(f"Error stopping download: {e}")
+        model_download_status.update({
+            "status": "error",
+            "message": f"Error stopping download: {str(e)}"
+        })
+    finally:
+        # Only set to None if it's still the same process
+        if model_current_process == current_process:
+            model_current_process = None
+        if model_download_thread:
+            model_download_thread = None
+        
+        # Reset the download status to idle after a short delay
+        time.sleep(1)  # Give time for any cleanup to complete
+        model_download_status.update({
+            "status": "idle",
+            "message": "",
+            "progress": 0,
+            "downloaded": "0B",
+            "total": "0B",
+            "speed": "0B/s",
+            "eta": "Unknown",
+            "current_model": "",
+            "total_models": 0,
+            "completed_models": 0,
+            "current_file": 1
+        })
     
     return jsonify({"status": "stopped"})
 
@@ -1121,25 +1306,37 @@ def model_status():
     Return the current status of model downloads.
     This endpoint is polled by the frontend to update progress.
     """
-    global model_current_process
+    global model_current_process, model_download_thread
     
-    # Only check for unexpected exit if we were actually downloading
-    if model_download_status.get('status') == 'downloading' and model_current_process is None:
-        # Check if the download thread is still running
-        if model_download_thread and model_download_thread.is_alive():
-            # Thread is still running, process might be starting up
-            return jsonify(model_download_status)
-        else:
-            # Thread is not running and process is None, something went wrong
+    # If we already have a completed or error status, just return it
+    if model_download_status.get('status') in ['completed', 'error', 'stopped', 'idle']:
+        return jsonify(model_download_status)
+    
+    # If we're in downloading state but process is None, check if it completed
+    if model_download_status.get('status') == 'downloading':
+        if model_download_status.get('progress') == 100:
+            # If progress is 100%, mark as completed regardless of process state
             model_download_status.update({
-                "status": "error",
-                "message": "Download process exited unexpectedly. Please try again.",
-                "progress": 0,
-                "downloaded": "0B",
-                "total": "0B",
-                "speed": "0B/s",
-                "eta": "Unknown"
+                "status": "completed",
+                "message": "Download completed successfully!",
+                "progress": 100
             })
+        elif model_current_process is None:
+            # Process is None but progress is not 100% - check if thread is still alive
+            if model_download_thread and model_download_thread.is_alive():
+                # Thread is still running, probably setting up a new process
+                return jsonify(model_download_status)
+            else:
+                # Neither process nor thread is running and progress < 100%, this is an error
+                model_download_status.update({
+                    "status": "error",
+                    "message": "Download process exited unexpectedly. Please try again.",
+                    "progress": 0,
+                    "downloaded": "0B",
+                    "total": "0B",
+                    "speed": "0B/s",
+                    "eta": "Unknown"
+                })
     
     return jsonify(model_download_status)
 

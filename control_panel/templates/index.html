@@ -528,6 +528,7 @@
     <script>
         // Global variables to store status update intervals
         let huggingfaceStatusInterval = null;
+        let isDownloading = false;  // Add global download state
         
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize all forms with AJAX submission
@@ -728,64 +729,6 @@
             });
         }
 
-        // Handle Preset Model Downloads
-        function runDownloadScript(scriptName, form) {
-            const formData = new FormData(form);
-            const submitBtn = form.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            
-            fetch('/run_download_script', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'error') {
-                    document.getElementById('presetStatus').textContent = data.message;
-                    document.getElementById('presetStatus').className = 'status-message status-error';
-                    submitBtn.disabled = false;
-                } else {
-                    startPresetStatusUpdates();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('presetStatus').textContent = 'Error starting download';
-                document.getElementById('presetStatus').className = 'status-message status-error';
-                submitBtn.disabled = false;
-            });
-            
-            return false;
-        }
-
-        function startPresetStatusUpdates() {
-            fetch('/model_status')
-            .then(response => response.json())
-            .then(data => {
-                const statusDiv = document.getElementById('presetStatus');
-                statusDiv.textContent = data.message;
-                statusDiv.className = data.status === 'error' ? 'status-message status-error' : 'status-message status-success';
-
-                document.getElementById('presetProgress').style.width = `${data.progress}%`;
-                document.getElementById('presetDownloaded').textContent = `Downloaded: ${data.downloaded}`;
-                document.getElementById('presetTotal').textContent = data.total;
-                document.getElementById('presetSpeed').textContent = data.speed;
-                document.getElementById('presetEta').textContent = data.eta;
-
-                if (data.status === 'downloading') {
-                    setTimeout(startPresetStatusUpdates, 1000);
-                } else if (data.status === 'completed' || data.status === 'error') {
-                    // Re-enable all download buttons
-                    document.querySelectorAll('form button[type="submit"]').forEach(btn => {
-                        btn.disabled = false;
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        }
-
         // Handle Training Tools Form
         document.getElementById('trainingForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -947,12 +890,28 @@
             
             // Add event listener to download button
             downloadButton.addEventListener('click', function() {
+                if (isDownloading) {
+                    alert('A download is already in progress. Please wait for it to complete or stop it first.');
+                    return;
+                }
+                
                 const checkedModels = Array.from(checkboxes)
                     .filter(cb => cb.checked)
                     .map(cb => cb.dataset.scriptId);
                 const token = tokenInput.value.trim();
                 
                 if (checkedModels.length === 0) return;
+                
+                isDownloading = true;
+                
+                // Reset status elements before starting new download
+                document.getElementById('presetStatus').textContent = 'Starting download...';
+                document.getElementById('presetStatus').className = 'status-message status-success';
+                document.getElementById('presetProgress').style.width = '0%';
+                document.getElementById('presetDownloaded').textContent = 'Downloaded: 0B';
+                document.getElementById('presetTotal').textContent = '0B';
+                document.getElementById('presetSpeed').textContent = '0B/s';
+                document.getElementById('presetEta').textContent = 'Unknown';
                 
                 const formData = new FormData();
                 formData.append('script_names', JSON.stringify(checkedModels));
@@ -974,6 +933,11 @@
                         document.getElementById('presetStatus').className = 'status-message status-error';
                         this.disabled = false;
                         stopButton.style.display = 'none';
+                        isDownloading = false;
+                        // Re-enable checkboxes
+                        document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                            checkbox.disabled = false;
+                        });
                     } else {
                         startPresetStatusUpdates();
                     }
@@ -984,6 +948,11 @@
                     document.getElementById('presetStatus').className = 'status-message status-error';
                     this.disabled = false;
                     stopButton.style.display = 'none';
+                    isDownloading = false;
+                    // Re-enable checkboxes
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = false;
+                    });
                 });
             });
 
@@ -994,16 +963,114 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // Reset all status elements
                     document.getElementById('presetStatus').textContent = 'Download stopped by user';
                     document.getElementById('presetStatus').className = 'status-message status-error';
+                    document.getElementById('presetProgress').style.width = '0%';
+                    document.getElementById('presetDownloaded').textContent = 'Downloaded: 0B';
+                    document.getElementById('presetTotal').textContent = '0B';
+                    document.getElementById('presetSpeed').textContent = '0B/s';
+                    document.getElementById('presetEta').textContent = 'Unknown';
+                    
+                    // Reset UI state
                     downloadButton.disabled = false;
                     stopButton.style.display = 'none';
+                    
+                    // Re-enable checkboxes
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = false;
+                    });
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
             });
         });
+
+        function startPresetStatusUpdates() {
+            fetch('/model_status')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('presetStatus');
+                const stopButton = document.getElementById('stopDownloadBtn');
+                const downloadButton = document.getElementById('downloadSelectedBtn');
+                const progressBar = document.getElementById('presetProgress');
+                
+                // Update status message and styling
+                statusDiv.textContent = data.message;
+                if (data.status === 'error') {
+                    statusDiv.className = 'status-message status-error';
+                    stopButton.style.display = 'none';
+                    downloadButton.disabled = false;
+                    isDownloading = false;
+                    // Re-enable checkboxes
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = false;
+                    });
+                } else if (data.status === 'stopped') {
+                    statusDiv.className = 'status-message status-error';
+                    statusDiv.textContent = 'Download stopped by user';
+                    stopButton.style.display = 'none';
+                    downloadButton.disabled = false;
+                    isDownloading = false;
+                    // Reset progress bar and stats
+                    progressBar.style.width = '0%';
+                    document.getElementById('presetDownloaded').textContent = 'Downloaded: 0B';
+                    document.getElementById('presetTotal').textContent = '0B';
+                    document.getElementById('presetSpeed').textContent = '0B/s';
+                    document.getElementById('presetEta').textContent = 'Unknown';
+                    // Re-enable checkboxes
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = false;
+                    });
+                    return; // Exit function to prevent further polling
+                } else if (data.status === 'completed') {
+                    statusDiv.className = 'status-message status-success';
+                    stopButton.style.display = 'none';
+                    downloadButton.disabled = false;
+                    isDownloading = false;
+                    
+                    // On successful completion, set progress to 100% and update stats
+                    progressBar.style.width = '100%';
+                    
+                    // If the message indicates files already exist, reset stats
+                    if (data.message.includes('already exist')) {
+                        document.getElementById('presetDownloaded').textContent = 'Downloaded: 0B';
+                        document.getElementById('presetTotal').textContent = '0B';
+                        document.getElementById('presetSpeed').textContent = '0B/s';
+                        document.getElementById('presetEta').textContent = 'N/A';
+                    }
+                    
+                    // Re-enable checkboxes
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = false;
+                    });
+                    return; // Exit function to prevent further polling
+                } else {
+                    statusDiv.className = 'status-message status-success';
+                    // Disable checkboxes during download
+                    document.querySelectorAll('.model-checkbox').forEach(checkbox => {
+                        checkbox.disabled = true;
+                    });
+                }
+
+                // Update progress and stats
+                progressBar.style.width = `${data.progress}%`;
+                document.getElementById('presetDownloaded').textContent = `Downloaded: ${data.downloaded}`;
+                document.getElementById('presetTotal').textContent = data.total;
+                document.getElementById('presetSpeed').textContent = data.speed;
+                document.getElementById('presetEta').textContent = data.eta;
+
+                // Continue polling only if still downloading
+                if (data.status === 'downloading') {
+                    setTimeout(startPresetStatusUpdates, 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                isDownloading = false;
+            });
+        }
     </script>
 </body>
 </html> 
