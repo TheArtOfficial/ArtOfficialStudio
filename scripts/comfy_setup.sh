@@ -93,7 +93,7 @@ git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
 cd ComfyUI-WanVideoWrapper
 git fetch origin
 git reset --hard origin/main
-git switch -c dev --track origin/dev
+git checkout dev
 git pull
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd ..
