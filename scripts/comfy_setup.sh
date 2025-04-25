@@ -6,15 +6,20 @@ cd ComfyUI
 git fetch origin
 git reset --hard origin/master
 python3.12 -m venv comfyui_venv
+./comfyui_venv/bin/python /frontend_fix.py '' ''/workspace/ComfyUI
 ./comfyui_venv/bin/python -m pip install --upgrade pip -qq
 echo "Installing ComfyUI requirements, this may take up to 5mins..."
-CUDA_VERSION=$(nvidia-smi | grep -oP "CUDA Version: \K[0-9]+\.[0-9]+")
+CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+")
 echo "CUDA Version: $CUDA_VERSION"
 # Set appropriate PyTorch index URL
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
-else
+elif [[ "$CUDA_VERSION" == "12.6" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+elif [[ "$CUDA_VERSION" == "12.4" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu124"
+else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
 fi
 ./comfyui_venv/bin/pip install --pre torch torchvision torchaudio --index-url $TORCH_INDEX_URL -qq
 sed -i '/^torch$/d' requirements.txt
@@ -37,6 +42,7 @@ mkdir -p models/text_encoders
 echo "Setting up directory structure..."
 mkdir -p /workspace/ComfyUI/user/default/workflows
 cp -r /workflows/* /workspace/ComfyUI/user/default/workflows
+chmod -R 777 /workspace/ComfyUI/user/default/workflows
 # rm -rf /workspace/workflows
 
 # Install ComfyUI nodes

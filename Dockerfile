@@ -168,8 +168,9 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 # Create workspace and clone repository
 RUN mkdir -p /workspace
+
 # Expose ports
-EXPOSE $FLUXGYM_PORT $COMFYUI_PORT $CTRL_PNL_PORT $CIVITAI_DOWN_PORT $DIFFUSION_PIPE_UI_PORT $TENSORBOARD_PORT $JUPYTER_PORT $KOHYA_UI_PORT
+EXPOSE 80
 
 COPY --chmod=755 start.sh /start.sh
 COPY --chmod=755 post_start.sh /post_start.sh
@@ -178,6 +179,6 @@ COPY --chmod=755 control_panel/ /control_panel
 COPY --chmod=755 scripts/ /scripts
 COPY --chmod=755 gradio_interface.py /gradio_interface.py
 COPY --chmod=755 hfd.sh /hfd.sh
-
+COPY --chmod=755 frontend_fix.py /frontend_fix.py
 # Set the entrypoint
 ENTRYPOINT ["/start.sh"] 

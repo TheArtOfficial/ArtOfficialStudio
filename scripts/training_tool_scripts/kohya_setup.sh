@@ -15,17 +15,21 @@ source venv/bin/activate
 
 # Install packages one by one with error handling
 echo "Installing PyTorch..."
-CUDA_VERSION=$(nvidia-smi | grep -oP "CUDA Version: \K[0-9]+\.[0-9]+")
+CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+")
 echo "CUDA Version: $CUDA_VERSION"
 # Set appropriate PyTorch index URL
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
-else
+elif [[ "$CUDA_VERSION" == "12.6" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+elif [[ "$CUDA_VERSION" == "12.4" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu124"
+else
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
 fi
 echo "Installing requirements..."
 pip install -r requirements.txt
-
+./venv/bin/pip install --force-reinstall torch torchvision torchaudio --index-url $TORCH_INDEX_URL
 echo "Installing additional packages..."
 pip install bitsandbytes==0.44.0
 pip install tensorboard==2.15.2
