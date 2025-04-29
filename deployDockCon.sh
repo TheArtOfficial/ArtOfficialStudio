@@ -1,4 +1,4 @@
-docker run -it --gpus all \
+docker run -it --gpus all --shm-size=32g \
 -p 80:80 \
 -v /home/art-official/vol1:/workspace \
 ghcr.io/theartofficial/artofficialstudio:latest

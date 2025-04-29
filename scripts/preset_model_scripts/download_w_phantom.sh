@@ -13,7 +13,7 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
 
 # Download Wan2_1_VAE_fp32.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
-    -o "Wan2_1_VAE_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    -o "Wan2_1_VAE_fp32_w.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_fp32.safetensors"
 
 # Download Phantom-Wan-1_3B_fp32.safetensors

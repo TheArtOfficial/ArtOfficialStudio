@@ -2,7 +2,7 @@
 # {
 #   "model_type": "wan",
 #   "model_name": "Wan2.1-T2V-1.3B",
-#   "checkpoint_path": "/workspace/training_models/Wan2.1-T2V-1.3B",
+#   "ckpt_path": "/workspace/training_models/Wan2.1-T2V-1.3B",
 #   "dtype": "bfloat16",
 #   "transformer_dtype": "float8",
 #   "timestep_sample_method": "logit_normal"

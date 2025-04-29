@@ -6,9 +6,10 @@ echo "Downloading files from HuggingFace repository black-forest-labs/FLUX.1-Red
 
 # Create output directory if it doesn't exist
 mkdir -p "/workspace/ComfyUI/models"
+mkdir -p "/workspace/ComfyUI/models/style_models"
 
 # Download flux1-redux-dev.safetensors
-aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/style_models" \
     -o "flux1-redux-dev.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/black-forest-labs/FLUX.1-Redux-dev/resolve/main/flux1-redux-dev.safetensors"
 

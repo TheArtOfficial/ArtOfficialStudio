@@ -27,14 +27,16 @@ DOCKER_DEV = os.environ.get('DOCKER_DEV', 'false').lower() == 'true'
 if DOCKER_DEV:
     BASE_PATH = Path("/workspace")
     SCRIPT_PATH = Path("/scripts")
+    COMFYUI_PATH = Path("/workspace/ComfyUI")
 else:
     BASE_PATH = Path("workspace")
     SCRIPT_PATH = Path("scripts")
-
+    COMFYUI_PATH = Path("workspace/ComfyUI")
+    
 # Working directories
 MODEL_DIR = BASE_PATH / "models"
 BASE_DATASET_DIR = BASE_PATH / "datasets"
-OUTPUT_DIR = BASE_PATH / "outputs"
+OUTPUT_DIR = COMFYUI_PATH / "models/loras"
 CONFIG_DIR = BASE_PATH / "configs"
 
 # Download script paths
@@ -157,7 +159,7 @@ def create_training_config(
     
     # Model parameters
     model_type: str,
-    checkpoint_path: str,
+    ckpt_path: str,
     diffusers_path: str,
     transformer_path: str,
     vae_path: str,
@@ -193,7 +195,7 @@ def create_training_config(
     # Create model configuration with empty string handling
     model_config = {
         "type": model_type,
-        "checkpoint_path": checkpoint_path if checkpoint_path else None,
+        "ckpt_path": ckpt_path if ckpt_path else None,
         "diffusers_path": diffusers_path if diffusers_path else None,
         "transformer_path": transformer_path if transformer_path else None,
         "vae_path": vae_path if vae_path else None,
@@ -492,7 +494,7 @@ def toggle_dataset_option(option):
             gr.update(visible=False),     # Hide Upload Files Button
         )
 
-def train_model(model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, checkpoint_path, diffusers_path,
+def train_model(model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, ckpt_path, diffusers_path,
                 transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
                 gradient_accumulation_steps, num_repeats, resolutions, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
                 ):
@@ -569,7 +571,7 @@ def train_model(model_name, model_type, dataset_path, config_dir, output_dir, ep
             steps_per_print=steps_per_print,
             video_clip_mode=video_clip_mode,
             model_type=model_type,
-            checkpoint_path=checkpoint_path,
+            ckpt_path=ckpt_path,
             diffusers_path=diffusers_path,
             transformer_path=transformer_path,
             vae_path=vae_path,
@@ -1220,7 +1222,7 @@ def update_model_config(model_name):
         "clip_path": None,
         "diffusers_path": None,
         "single_file_path": None,
-        "checkpoint_path": None,
+        "ckpt_path": None,
         "text_encoder_path": None,
         "llama3_path": None,
         "dtype": "bfloat16",
@@ -1694,7 +1696,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 info="Path to a single model file",
                 visible=False
             )
-            checkpoint_path = gr.Textbox(
+            ckpt_path = gr.Textbox(
                 label="Checkpoint Path",
                 value="",
                 info="Path to the model checkpoint",
@@ -2093,7 +2095,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
 
     
     def handle_train_click(
-        model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, checkpoint_path, diffusers_path,
+        model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, ckpt_path, diffusers_path,
         transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
         gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key
     ):
@@ -2115,7 +2117,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             eval_every=eval_every,
             rank=rank,
             lora_dtype=lora_dtype,
-            checkpoint_path=checkpoint_path,
+            ckpt_path=ckpt_path,
             diffusers_path=diffusers_path,
             transformer_path=transformer_path,
             vae_path=vae_path,
@@ -2274,7 +2276,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
         fn=handle_train_click,
         inputs=[
             model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
-            checkpoint_path, diffusers_path, transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+            ckpt_path, diffusers_path, transformer_path, vae_path, llm_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
             gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar,
             num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step,
             eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes,
@@ -2337,7 +2339,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 clip_path: gr.update(value="", visible=False),
                 diffusers_path: gr.update(value="", visible=False),
                 single_file_path: gr.update(value="", visible=False),
-                checkpoint_path: gr.update(value="", visible=False),
+                ckpt_path: gr.update(value="", visible=False),
                 text_encoder_path: gr.update(value="", visible=False),
                 llama3_path: gr.update(value="", visible=False),
                 dtype: gr.update(value="bfloat16", visible=True),
@@ -2388,9 +2390,9 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 visible=bool(config.get("single_file_path")),
                 interactive=True
             ),
-            checkpoint_path: gr.update(
-                value=config.get("checkpoint_path", ""),
-                visible=bool(config.get("checkpoint_path")),
+            ckpt_path: gr.update(
+                value=config.get("ckpt_path", ""),
+                visible=bool(config.get("ckpt_path")),
                 interactive=True
             ),
             text_encoder_path: gr.update(
@@ -2494,7 +2496,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             clip_path,
             diffusers_path,
             single_file_path,
-            checkpoint_path,
+            ckpt_path,
             text_encoder_path,
             llama3_path,
             dtype,
@@ -2522,7 +2524,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             clip_path,
             diffusers_path,
             single_file_path,
-            checkpoint_path,
+            ckpt_path,
             text_encoder_path,
             llama3_path,
             dtype,
@@ -2589,4 +2591,7 @@ if __name__ == "__main__":
     for dir_path in [MODEL_DIR, BASE_DATASET_DIR, OUTPUT_DIR, CONFIG_DIR]:
         os.makedirs(dir_path, exist_ok=True)
     
-    demo.launch(server_name="0.0.0.0", server_port=7000, allowed_paths=["/workspace", ".", os.getcwd()])
+    if DOCKER_DEV:
+        demo.launch(server_name="0.0.0.0", server_port=7000, root_path="/diffusion/", allowed_paths=["/workspace", ".", os.getcwd()])
+    else:
+        demo.launch(server_name="0.0.0.0", server_port=7000, allowed_paths=["/workspace", ".", os.getcwd()])

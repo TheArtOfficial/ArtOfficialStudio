@@ -20,28 +20,27 @@ cd sd-scripts
 echo "Installing sd-scripts dependencies..."
 # Set appropriate PyTorch index URL
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 elif [[ "$CUDA_VERSION" == "12.6" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu126"
 elif [[ "$CUDA_VERSION" == "12.4" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu124"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu124"
 else
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
-./fluxgym_venv/bin/pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
-pip install -r requirements.txt
+pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
 cd ..
 echo "Installing FluxGym dependencies..."
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
-pip install -r requirements.txt -q
+pip install -r requirements.txt
 pip install -U bitsandbytes
 pip install --upgrade --force-reinstall triton==2.2.0
 deactivate
 # Start FluxGym
 echo "modifying gradio port"
-sed -i 's/demo\.launch(debug=True, show_error=True, allowed_paths=\[cwd\])/demo.launch(debug=True, show_error=True, allowed_paths=\[cwd\], server_port=6000, server_name="0.0.0.0")/' app.py
+sed -i 's/demo\.launch(debug=True, show_error=True, allowed_paths=\[cwd\])/demo.launch(debug=True, root_path="\/fluxgym", show_error=True, allowed_paths=\[cwd\], server_port=6000, server_name="0.0.0.0")/' app.py
 echo "Starting FluxGym..."
 cd /workspace/fluxgym && ./fluxgym_venv/bin/python app.py
 echo "FluxGym setup complete."

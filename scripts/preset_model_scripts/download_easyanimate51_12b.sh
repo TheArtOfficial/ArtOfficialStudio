@@ -5,6 +5,7 @@ echo "Downloading files from HuggingFace repository alibaba-pai/EasyAnimateV5.1-
 
 # Create output directory if it doesn't exist
 mkdir -p "/workspace/ComfyUI/models"
+mkdir -p "/workspace/ComfyUI/models/EasyAnimate"
 
 # Download .gitattributes
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/EasyAnimate" \

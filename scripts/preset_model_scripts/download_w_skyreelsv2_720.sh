@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: Skyreels V2 720p
+# Model: Skyreels V2 720p & Diff Extension
 
 echo "Downloading files from HuggingFace repository Kijai/WanVideo_comfy..."
 
