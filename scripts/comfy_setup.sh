@@ -134,6 +134,7 @@ cd ComfyUI-LatentSyncWrapper
 git fetch origin
 git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+/workspace/ComfyUI/comfyui_venv/bin/pip install insightface
 cd /workspace/ComfyUI/custom_nodes
 
 # FramePackI2V
@@ -230,7 +231,7 @@ cd /workspace/ComfyUI/custom_nodes
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
 ./comfyui_venv/bin/pip uninstall -y onnxruntime
-./comfyui_venv/bin/pip install onnxruntime-gpu=="1.21" sageattention hf_transfer
+./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19.2" sageattention hf_transfer
 
 # Start ComfyUI
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --listen --port 8188 --preview-method auto > comfy.log 2>&1 &

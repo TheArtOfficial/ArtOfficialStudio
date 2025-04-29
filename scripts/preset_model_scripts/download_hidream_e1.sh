@@ -28,7 +28,7 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
 
     # Download split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
-    -o "hidream_llama_3.1_8b_instruct_fp8_scaled.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    -o "llama_3.1_8b_instruct_fp8_scaled.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/llama_3.1_8b_instruct_fp8_scaled.safetensors"
 
 # Download split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors
@@ -37,7 +37,7 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
     "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/t5xxl_fp8_e4m3fn_scaled.safetensors"
 
 # Download split_files/diffusion_models/hidream_i1_full_fp16.safetensors
-aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models" \
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "hidream_i1_full_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_i1_full_fp16.safetensors"
 
