@@ -1,5 +1,6 @@
 #!/bin/bash
-# Model: Native WanFun v1.1 14B
+# Model: WanFun Control v1.1 14B
+# Requires-HF-Token: false
 
 echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-14B-Control..."
 

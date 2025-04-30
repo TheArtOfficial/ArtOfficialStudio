@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: Native WanFun v1.0 1.3B
+# Model: WanFun Control v1.0 1.3B
 # Requires-HF-Token: false
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 

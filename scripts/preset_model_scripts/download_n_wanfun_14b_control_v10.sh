@@ -1,6 +1,7 @@
 #!/bin/bash
-# Model: Native WanFun v1.0 14B
+# Model: WanFun Control v1.0 14B
 # Requires-HF-Token: false
+
 echo "Downloading files from HuggingFace repository ..."
 
 # Create output directory if it doesn't exist

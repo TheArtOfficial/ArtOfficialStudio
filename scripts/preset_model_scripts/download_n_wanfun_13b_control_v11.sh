@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: Native WanFun v1.1 1.3B
+# Model: WanFun Control v1.1 1.3B
 
 echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control..."
 

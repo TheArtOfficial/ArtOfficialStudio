@@ -227,6 +227,13 @@ git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
+git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
+cd ComfyUI-AnimateDiff-Evolved
+git fetch origin
+git reset --hard origin/main
+cd /workspace/ComfyUI/custom_nodes
+
+
 # Fix onnxruntime for ComfyUI
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
