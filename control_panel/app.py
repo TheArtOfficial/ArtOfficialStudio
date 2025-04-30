@@ -455,10 +455,11 @@ def parse_script_header(script_path):
             .replace('_', ' ')\
             .title()
             
-        # Look for Model/Description/Token markers
+        # Look for Model/Description/Token/URL markers
         name = None
         description = ''
         requires_token = False
+        model_url = None
         
         for line in content:
             line = line.strip()
@@ -468,16 +469,19 @@ def parse_script_header(script_path):
                 description = line.replace('# Description:', '').strip()
             elif line.startswith('# Requires-HF-Token:'):
                 requires_token = line.replace('# Requires-HF-Token:', '').strip().lower() == 'true'
+            elif line.startswith('# Model-URL:'):
+                model_url = line.replace('# Model-URL:', '').strip()
                 
         # If no name found in header, use fallback
         if not name:
             name = fallback_name
             
-        print(f"DEBUG: Parsed name: {name}, description: {description}, requires token: {requires_token}")
+        print(f"DEBUG: Parsed name: {name}, description: {description}, requires token: {requires_token}, url: {model_url}")
         return {
             'name': name,
             'description': description,
-            'requires_token': requires_token
+            'requires_token': requires_token,
+            'model_url': model_url
         }
             
     except Exception as e:
@@ -490,7 +494,8 @@ def parse_script_header(script_path):
         return {
             'name': fallback_name,
             'description': '',
-            'requires_token': False
+            'requires_token': False,
+            'model_url': None
         }
 
 def parse_training_tool_script(script_path):
@@ -539,7 +544,8 @@ def index():
             'id': script_name,
             'name': model_info['name'],
             'description': model_info.get('description', ''),
-            'requires_token': model_info.get('requires_token', False)
+            'requires_token': model_info.get('requires_token', False),
+            'model_url': model_info.get('model_url', '')
         })
     
     # Sort scripts alphabetically by name
@@ -1447,7 +1453,8 @@ def model_downloader():
             'id': script_name,
             'name': model_info['name'],
             'description': model_info.get('description', ''),
-            'requires_token': model_info.get('requires_token', False)
+            'requires_token': model_info.get('requires_token', False),
+            'model_url': model_info.get('model_url', '')
         })
     
     # Sort scripts alphabetically by name

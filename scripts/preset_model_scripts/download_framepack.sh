@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model: FramepackI2V
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Kijai/HunyuanVideo_comfy
 
 echo "Downloading files from HuggingFace repository Kijai/HunyuanVideo_comfy..."
 

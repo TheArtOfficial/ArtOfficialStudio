@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: FantasyTalker I2V w/ LipSync
 # Requires-HF-Token: false
-
+# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
 echo "Downloading files from HuggingFace repository FantasyTalker..."
 
 # Create output directory if it doesn't exist

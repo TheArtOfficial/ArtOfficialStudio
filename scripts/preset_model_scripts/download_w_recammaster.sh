@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model: ReCamMaster Wan2.1
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
 
 echo "Downloading Recam models..."
 

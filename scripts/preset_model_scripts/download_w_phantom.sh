@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model: Phantom-Video
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
 
 echo "Downloading files from HuggingFace repository Kijai/WanVideo_comfy..."
 

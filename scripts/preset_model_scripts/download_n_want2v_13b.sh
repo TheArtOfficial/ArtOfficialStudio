@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model: Native Wan2.1 T2V 1.3B
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged
 
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 

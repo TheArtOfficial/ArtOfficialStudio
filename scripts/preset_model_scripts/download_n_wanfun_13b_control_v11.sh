@@ -1,5 +1,7 @@
 #!/bin/bash
 # Model: WanFun Control v1.1 1.3B
+# Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged
 
 echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control..."
 

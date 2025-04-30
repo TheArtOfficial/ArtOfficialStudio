@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model:  WanFun Camera Control v1.1 1.3B
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control-Camera
 
 echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control-Camera..."
 

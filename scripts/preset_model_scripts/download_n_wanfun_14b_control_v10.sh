@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: WanFun Control v1.0 14B
 # Requires-HF-Token: false
-
+# Model-URL: https://huggingface.co/alibaba-pai/Wan2.1-Fun-14B-Control
 echo "Downloading files from HuggingFace repository ..."
 
 # Create output directory if it doesn't exist

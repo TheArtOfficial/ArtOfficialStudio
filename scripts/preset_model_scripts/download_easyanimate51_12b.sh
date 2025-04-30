@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: Easy Animate 5.1 12B
 # Requires-HF-Token: false
-
+# Model-URL: https://huggingface.co/alibaba-pai/EasyAnimateV5.1-12b-zh-Control-diffusers
 echo "Downloading files from HuggingFace repository alibaba-pai/EasyAnimateV5.1-12b-zh-Control-diffusers..."
 
 # Create output directory if it doesn't exist

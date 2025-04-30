@@ -102,7 +102,7 @@ def filter_files(files: List[str], patterns: Optional[List[str]] = None, precisi
     return filtered_by_precision
 
 
-def generate_download_script(repo_id: str, files: List[str], output_path: str, model_name: Optional[str] = None):
+def generate_download_script(repo_id: str, files: List[str], output_path: str, model_name: Optional[str] = None, model_url: Optional[str] = None):
     """
     Generate a shell script to download the files.
     
@@ -111,6 +111,7 @@ def generate_download_script(repo_id: str, files: List[str], output_path: str, m
         files: List of file paths
         output_path: Path to save the shell script
         model_name: Optional custom model name
+        model_url: Optional URL for the model
     """
     display_name = model_name if model_name else f"{repo_id}"
     
@@ -118,13 +119,20 @@ def generate_download_script(repo_id: str, files: List[str], output_path: str, m
         "#!/bin/bash",
         f"# Model: {display_name}",
         "# Requires-HF-Token: false",
+    ]
+    
+    # Add URL if provided
+    if model_url:
+        script_lines.append(f"# Model-URL: {model_url}")
+    
+    script_lines.extend([
         "",
         f"echo \"Downloading files from HuggingFace repository {repo_id}...\"",
         "",
         "# Create output directory if it doesn't exist",
         "mkdir -p \"/workspace/ComfyUI/models\"",
         ""
-    ]
+    ])
     
     # Add download commands
     for file_path in files:
@@ -158,6 +166,7 @@ def main():
     parser.add_argument("--files", nargs="+", help="Optional list of files or patterns to download (e.g., '*.safetensors' 'configs/*')")
     parser.add_argument("--output", default=None, help="Output script path")
     parser.add_argument("--model-name", default=None, help="Optional custom model name for the script header")
+    parser.add_argument("--model-url", default=None, help="Optional URL for the model")
     parser.add_argument("--precision", nargs="+", choices=["fp8", "fp16", "fp32", "bf16"], 
                        help="Filter files by precision type(s). Multiple values can be specified (e.g., '--precision fp16 fp32'). Files without precision markers are always included. If not specified, all files are downloaded.")
     parser.add_argument("--folder", default=None, help="Optional folder to download files to")
@@ -166,6 +175,7 @@ def main():
     repo_id = args.repo
     file_patterns = args.files
     model_name = args.model_name
+    model_url = args.model_url
     precisions = args.precision
     
     folder = "scripts/preset_model_scripts"
@@ -206,7 +216,7 @@ def main():
             print("No files matched the provided filters.")
             return
         
-        generate_download_script(repo_id, filtered_files, output_path, model_name)
+        generate_download_script(repo_id, filtered_files, output_path, model_name, model_url)
         
     except Exception as e:
         print(f"Error: {e}")

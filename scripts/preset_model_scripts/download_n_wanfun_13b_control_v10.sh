@@ -1,6 +1,8 @@
 #!/bin/bash
 # Model: WanFun Control v1.0 1.3B
 # Requires-HF-Token: false
+# Model-URL: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged
+
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 
 # Create output directory if it doesn't exist

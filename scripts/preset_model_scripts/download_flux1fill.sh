@@ -1,6 +1,7 @@
 #!/bin/bash
 # Model: FLUX.1 Fill
 # Requires-HF-Token: true
+# Model-URL: https://huggingface.co/black-forest-labs/FLUX.1-Fill-dev
 
 echo "Downloading files from HuggingFace repository black-forest-labs/FLUX.1-Fill-dev..."
 

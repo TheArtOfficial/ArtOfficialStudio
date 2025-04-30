@@ -414,7 +414,11 @@
                                     </div>
                                 </td>
                                 <td>
+                                    {% if script.model_url %}
+                                    <a href="{{ script.model_url }}" target="_blank">{{ script.name }}</a>
+                                    {% else %}
                                     {{ script.name }}
+                                    {% endif %}
                                     {% if script.requires_token %}
                                     <span class="badge bg-primary ms-2">Requires HF Token</span>
                                     {% endif %}
