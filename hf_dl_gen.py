@@ -117,6 +117,7 @@ def generate_download_script(repo_id: str, files: List[str], output_path: str, m
     script_lines = [
         "#!/bin/bash",
         f"# Model: {display_name}",
+        "# Requires-HF-Token: false",
         "",
         f"echo \"Downloading files from HuggingFace repository {repo_id}...\"",
         "",

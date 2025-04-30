@@ -1,5 +1,6 @@
 #!/bin/bash
 # Model: FantasyTalker I2V w/ LipSync
+# Requires-HF-Token: false
 
 echo "Downloading files from HuggingFace repository FantasyTalker..."
 

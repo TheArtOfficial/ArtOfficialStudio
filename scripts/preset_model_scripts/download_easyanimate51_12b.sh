@@ -1,5 +1,6 @@
 #!/bin/bash
 # Model: Easy Animate 5.1 12B
+# Requires-HF-Token: false
 
 echo "Downloading files from HuggingFace repository alibaba-pai/EasyAnimateV5.1-12b-zh-Control-diffusers..."
 
