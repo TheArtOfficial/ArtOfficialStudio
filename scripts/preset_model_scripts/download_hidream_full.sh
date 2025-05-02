@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: HiDream-I1 Full
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI
+# Model-URL: https://huggingface.co/HiDream-ai/HiDream-I1-Fast
 
 echo "Downloading files from HuggingFace repository Comfy-Org/HiDream-I1_ComfyUI..."
 

@@ -13,4 +13,4 @@ mkdir -p /workspace/training_models
 
 cd /workspace/training_models
 
-bash /hfd.sh black-forest-labs/FLUX.1-dev --hf_token "$HUGGINGFACE_TOKEN"
+bash /hfd.sh black-forest-labs/FLUX.1-dev --hf_username "$HF_USERNAME" --hf_token "$HUGGINGFACE_TOKEN"

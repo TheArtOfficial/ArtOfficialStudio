@@ -16,4 +16,4 @@ mkdir -p /workspace/training_models
 cd /workspace/training_models
 
 bash /hfd.sh HiDream-ai/HiDream-I1-Full
-bash /hfd.sh meta-llama/Meta-Llama-3.1-8B-Instruct --hf_token "$HUGGINGFACE_TOKEN"
+bash /hfd.sh meta-llama/Meta-Llama-3.1-8B-Instruct --hf_username "$HF_USERNAME" --hf_token "$HUGGINGFACE_TOKEN"

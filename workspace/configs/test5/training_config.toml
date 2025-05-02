@@ -1,4 +1,4 @@
-output_dir = "workspace/outputs/test5"
+output_dir = "workspace/ComfyUI/models/loras/test5"
 dataset = "workspace/configs/test5/dataset_config.toml"
 epochs = 1000
 micro_batch_size_per_gpu = 1
@@ -21,8 +21,8 @@ video_clip_mode = "single_middle"
 pipeline_stages = 1
 
 [model]
-type = "flux"
-diffusers_path = "/workspace/training_models/FLUX.1-dev"
+type = "wan"
+ckpt_path = "/workspace/training_models/Wan2.1-T2V-1.3B"
 dtype = "bfloat16"
 transformer_dtype = "float8"
 timestep_sample_method = "logit_normal"
@@ -41,7 +41,7 @@ weight_decay = 0.01
 eps = 1e-8
 
 [monitoring]
-log_dir = "workspace/outputs/test5"
+log_dir = "workspace/ComfyUI/models/loras/test5"
 enable_wandb = false
 wandb_run_name = ""
 wandb_tracker_name = ""

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: Native Wan2.1 I2V 720p
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged
+# Model-URL: https://github.com/Wan-Video/Wan2.1
 
 echo "Downloading files from HuggingFace repository Comfy-Org/Wan_2.1_ComfyUI_repackaged..."
 

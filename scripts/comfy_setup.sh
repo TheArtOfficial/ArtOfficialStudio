@@ -22,7 +22,6 @@ else
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
 ./comfyui_venv/bin/pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
-./comfyui_venv/bin/pip install triton
 
 # Create model directories
 echo "Creating model directories..."
@@ -233,12 +232,21 @@ git fetch origin
 git reset --hard origin/main
 cd /workspace/ComfyUI/custom_nodes
 
-
 # Fix onnxruntime for ComfyUI
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
 ./comfyui_venv/bin/pip uninstall -y onnxruntime
-./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19.2" sageattention hf_transfer
-
+./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19.2" hf_transfer
+VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
+# Check if "sageattention" is already installed
+PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
+if ! echo "$PIP_OUTPUT" | grep -q "^sageattention "; then
+    echo "Installing sageattention..."
+    git clone https://github.com/thu-ml/SageAttention.git
+    cd SageAttention
+    /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
+else
+    echo "sageattention is already installed. Skipping setup."
+fi
 # Start ComfyUI
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --listen --port 8188 --preview-method auto > comfy.log 2>&1 &

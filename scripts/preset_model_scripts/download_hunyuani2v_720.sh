@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: HunyuanI2V 720p
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Comfy-Org/HunyuanVideo_repackaged
+# Model-URL: https://github.com/Tencent/HunyuanVideo-I2V
 
 echo "Downloading Wan2.1 I2V model and related files..."
 

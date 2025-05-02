@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: Skyreels A2 Demo
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
+# Model-URL: https://skyworkai.github.io/skyreels-a2.github.io/
 
 echo "Downloading VACE, Skyreels, and Recam models..."
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: VACE
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
+# Model-URL: https://ali-vilab.github.io/VACE-Page/
 
 echo "Downloading VACE, Skyreels, and Recam models..."
 

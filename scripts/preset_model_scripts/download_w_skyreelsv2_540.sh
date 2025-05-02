@@ -1,7 +1,7 @@
 #!/bin/bash
 # Model: Skyreels V2 540p & Diff Extension
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/Kijai/WanVideo_comfy
+# Model-URL: https://github.com/SkyworkAI/SkyReels-V2
 
 echo "Downloading files from HuggingFace repository Kijai/WanVideo_comfy..."
 
