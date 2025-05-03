@@ -32,7 +32,7 @@ sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
-    wget -c https://huggingface.co/TheArtOfficialTrainer/cu128Torch128whls/resolve/main/flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
+    wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
     ./diffpipe_venv/bin/pip install flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
 else
     ./diffpipe_venv/bin/pip install flash_attn

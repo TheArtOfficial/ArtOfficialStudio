@@ -344,6 +344,8 @@
             <button class="nav-link" id="training-tab" data-bs-toggle="tab" data-bs-target="#training" type="button" role="tab">Training Tools</button>
             <button class="nav-link" id="civitai-tab" data-bs-toggle="tab" data-bs-target="#civitai" type="button" role="tab">CivitAI Downloader</button>
             <button class="nav-link" id="huggingface-tab" data-bs-toggle="tab" data-bs-target="#huggingface" type="button" role="tab">HuggingFace Downloader</button>
+            <button class="nav-link" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation" type="button" role="tab">Documentation</button>
+            <button class="nav-link" id="advanced-tab" data-bs-toggle="tab" data-bs-target="#advanced" type="button" role="tab">Advanced</button>
         </nav>
 
         <div class="tab-content" id="myTabContent">
@@ -483,9 +485,9 @@
                         <div class="mt-2">
                             <small class="text-muted">Documentation:</small>
                             <ul class="list-unstyled ms-3">
-                                <li><a href="https://github.com/tdrussell/diffusion-pipe" target="_blank">Diffusion Pipeline</a> - Pipeline parallel training for diffusion models</li>
-                                <li><a href="https://github.com/bmaltais/kohya_ss" target="_blank">Kohya SS</a> - Web UI for Stable Diffusion training</li>
-                                <li><a href="https://github.com/cocktailpeanut/fluxgym" target="_blank">FluxGym</a> - Training environment for AI models</li>
+                                <li><a href="https://github.com/tdrussell/diffusion-pipe" target="_blank">Diffusion Pipe</a> - Lora training for diffusion models</li>
+                                <li><a href="https://github.com/bmaltais/kohya_ss" target="_blank">Kohya SS</a> - The OriginalWeb UI for Stable Diffusion training</li>
+                                <li><a href="https://github.com/cocktailpeanut/fluxgym" target="_blank">FluxGym</a> - Training environment for Low VRAM Flux Lora Trianing</li>
                             </ul>
                         </div>
                     </div>
@@ -511,7 +513,20 @@
             <!-- CivitAI Downloader Tab -->
             <div class="tab-pane fade" id="civitai" role="tabpanel">
                 <h3>Download CivitAI Models</h3>
-                <p>Download models directly from CivitAI.</p>
+                
+                <div class="alert alert-info mb-4">
+                    <h5 class="alert-heading mb-2"><i class="bi bi-info-circle me-2"></i>How to use the CivitAI Downloader</h5>
+                    <ol class="mb-0">
+                        <li>Go to <a href="https://civitai.com" target="_blank">CivitAI</a> and find the model you want to download</li>
+                        <li>Right Click the "Download" button on the model page and copy the URL</li>
+                        <li>If the link has a "?" in it, remove the "?" and everything after it</li>
+                        <li>Paste the URL in the field below</li>
+                        <li>Select the appropriate model type (LoRA, Checkpoint, etc.)</li>
+                        <li>Enter a filename (without extension) to save the model as</li>
+                        <li>Enter your CivitAI token</li>
+                        <li>Click "Download" to start the download process</li>
+                    </ol>
+                </div>
                 
                 <form id="civitaiDownloadForm">
                     <div class="mb-3">
@@ -558,6 +573,21 @@
             <!-- HuggingFace Downloader Tab -->
             <div class="tab-pane fade" id="huggingface" role="tabpanel">
                 <h3>Download from HuggingFace</h3>
+                
+                <div class="alert alert-info mb-4">
+                    <h5 class="alert-heading mb-2"><i class="bi bi-info-circle me-2"></i>How to use the HuggingFace Downloader</h5>
+                    <ol class="mb-0">
+                        <li>Go to <a href="https://huggingface.co" target="_blank">HuggingFace</a> and find the model you want to download</li>
+                        <li>Navigate to the specific file you want (e.g., a .safetensors file)</li>
+                        <li>Copy the direct URL to that file (right-click and "Copy Link")</li>
+                        <li>Paste the URL in the field below</li>
+                        <li>If there is a "?" in the URL, remove the "?" and everything after it</li>
+                        <li>For private or gated models, enter your HuggingFace token</li>
+                        <li>Specify a download path if you want to save to a specific location</li>
+                        <li>If no path is specified, it will download to the default models directory</li>
+                    </ol>
+                </div>
+                
                 <form id="hfForm">
                     <div class="mb-3">
                         <label for="model_url" class="form-label">HuggingFace Model URL</label>
@@ -597,6 +627,158 @@
                     <button id="hfStopButton" class="btn btn-danger mt-3 d-none">Stop Download</button>
                 </div>
             </div>
+
+            <!-- Documentation Tab -->
+            <div class="tab-pane fade" id="documentation" role="tabpanel">
+                <h3>Documentation</h3>
+                <p>Official documentation for ArtOfficial Studio and installation guides.</p>
+                
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h4 class="mb-0">ArtOfficial Studio Documentation</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>ArtOfficial Studio is a powerful Docker-based container application designed to make cutting-edge AI tools and model training accessible to everyone. Whether you're an artist, researcher, or enthusiast, this documentation provides comprehensive guides for installation and usage.</p>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
+                            <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation" target="_blank" class="btn btn-primary">
+                                <i class="bi bi-github me-2"></i>View Full Documentation
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Installation Guides</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#local-installation" target="_blank">
+                                            <i class="bi bi-pc-display me-2"></i>Local Installation (Windows/Linux)
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#runpod-cloud-gpu-installation" target="_blank">
+                                            <i class="bi bi-cloud me-2"></i>RunPod Cloud GPU Installation
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#paperspace-installation" target="_blank">
+                                            <i class="bi bi-cloud-fill me-2"></i>Paperspace Installation
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header">
+                                <h5 class="mb-0">Usage Guides</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#model-downloader-tab" target="_blank">
+                                            <i class="bi bi-cloud-download me-2"></i>Model Downloader
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#training-tools-tab" target="_blank">
+                                            <i class="bi bi-gear me-2"></i>Training Tools
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#civitai-downloader-tab" target="_blank">
+                                            <i class="bi bi-box-arrow-in-down me-2"></i>CivitAI Downloader
+                                        </a>
+                                    </li>
+                                    <li class="list-group-item">
+                                        <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation#huggingface-downloader-tab" target="_blank">
+                                            <i class="bi bi-arrow-down-square me-2"></i>HuggingFace Downloader
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Tip:</strong> For the latest updates and complete documentation, please visit the 
+                    <a href="https://github.com/TheArtOfficial/ArtOfficialStudio-Documentation" target="_blank" class="alert-link">GitHub repository</a>.
+                </div>
+            </div>
+
+            <!-- Advanced Tab -->
+            <div class="tab-pane fade" id="advanced" role="tabpanel">
+                <h3>Advanced Controls</h3>
+                <p>Restart specific programs if they are not functioning correctly.</p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header bg-light">
+                                <h4 class="mb-0">Restart Services</h4>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="list-group mb-3">
+                                            <button class="list-group-item list-group-item-action" id="restart-comfyui">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">ComfyUI</h5>
+                                                </div>
+                                                <p class="mb-1">Node-based UI for Stable Diffusion</p>
+                                            </button>
+                                            <button class="list-group-item list-group-item-action" id="restart-diffusionpipe">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">Diffusion Pipe</h5>
+                                                </div>
+                                                <p class="mb-1">Lora training for diffusion models</p>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="list-group mb-3">
+                                            <button class="list-group-item list-group-item-action" id="restart-fluxgym">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">FluxGym</h5>
+                                                </div>
+                                                <p class="mb-1">Training environment for Flux Loras</p>
+                                            </button>
+                                            <button class="list-group-item list-group-item-action" id="restart-kohya">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <h5 class="mb-1">Kohya</h5>
+                                                </div>
+                                                <p class="mb-1">Lora Training for SD models</p>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Operation Log</h5>
+                        <button class="btn btn-sm btn-outline-secondary" id="copy-advanced-log">
+                            <i class="bi bi-clipboard"></i> Copy Log
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="advanced-log" class="log-box" style="height: 300px; overflow-y: auto; background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; word-break: break-word;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -609,6 +791,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize all forms with AJAX submission
             initHuggingFaceForm();
+            initAdvancedTab();
         });
         
         function initHuggingFaceForm() {
@@ -1146,6 +1329,132 @@
                 console.error('Error:', error);
                 isDownloading = false;
             });
+        }
+
+        // Advanced tab initialization
+        function initAdvancedTab() {
+            const logBox = document.getElementById('advanced-log');
+            const copyButton = document.getElementById('copy-advanced-log');
+            
+            // Service restart buttons
+            const restartButtons = {
+                'comfyui': { port: 8188, script: 'restart_comfyui.sh', display: 'ComfyUI' },
+                'diffusionpipe': { port: 7000, script: 'restart_diffpipe.sh', display: 'Diffusion Pipe' },
+                'fluxgym': { port: 6000, script: 'restart_fluxgym.sh', display: 'FluxGym' },
+                'kohya': { port: 8000, script: 'restart_kohya.sh', display: 'Kohya' }
+            };
+            
+            // Add click event listeners to restart buttons
+            Object.keys(restartButtons).forEach(service => {
+                const button = document.getElementById(`restart-${service}`);
+                if (button) {
+                    button.addEventListener('click', function() {
+                        // Disable all buttons during restart
+                        Object.keys(restartButtons).forEach(s => {
+                            document.getElementById(`restart-${s}`).disabled = true;
+                        });
+                        
+                        // Log the restart attempt
+                        const timestamp = new Date().toLocaleTimeString();
+                        logBox.innerHTML += `[${timestamp}] Attempting to restart ${restartButtons[service].display} (port ${restartButtons[service].port})...\n`;
+                        logBox.scrollTop = logBox.scrollHeight;
+                        
+                        // Call the API
+                        restartService(service, restartButtons[service].port, restartButtons[service].script)
+                            .then(response => {
+                                // Handle response
+                                if (response.status === 'success') {
+                                    logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${response.message}\n`;
+                                    
+                                    // Poll for service status
+                                    const statusCheckInterval = setInterval(() => {
+                                        fetch(`/check_service_status?service=${service}`)
+                                            .then(res => res.json())
+                                            .then(data => {
+                                                // Clear the log and rebuild it with all output from the server
+                                                // This ensures we don't miss any lines
+                                                logBox.innerHTML = '';
+                                                
+                                                // Add all output lines to the log box
+                                                if (Array.isArray(data.output) && data.output.length > 0) {
+                                                    data.output.forEach(line => {
+                                                        // Add timestamp to each line for better log readability
+                                                        logBox.innerHTML += `[${new Date().toLocaleTimeString()}] ${line}\n`;
+                                                    });
+                                                }
+                                                
+                                                // Add the latest status message
+                                                logBox.innerHTML += `[${new Date().toLocaleTimeString()}] STATUS: ${data.message}\n`;
+                                                logBox.scrollTop = logBox.scrollHeight;
+                                                
+                                                if (data.status === 'success' || data.status === 'error') {
+                                                    clearInterval(statusCheckInterval);
+                                                    // Re-enable all buttons
+                                                    Object.keys(restartButtons).forEach(s => {
+                                                        document.getElementById(`restart-${s}`).disabled = false;
+                                                    });
+                                                }
+                                            })
+                                            .catch(error => {
+                                                console.error('Error checking service status:', error);
+                                                logBox.innerHTML += `[${new Date().toLocaleTimeString()}] Error checking service status: ${error.message}\n`;
+                                                clearInterval(statusCheckInterval);
+                                                // Re-enable all buttons
+                                                Object.keys(restartButtons).forEach(s => {
+                                                    document.getElementById(`restart-${s}`).disabled = false;
+                                                });
+                                            });
+                                    }, 2000); // Check every 2 seconds
+                                } else {
+                                    logBox.innerHTML += `[${new Date().toLocaleTimeString()}] Error: ${response.message}\n`;
+                                    // Re-enable all buttons
+                                    Object.keys(restartButtons).forEach(s => {
+                                        document.getElementById(`restart-${s}`).disabled = false;
+                                    });
+                                }
+                                logBox.scrollTop = logBox.scrollHeight;
+                            })
+                            .catch(error => {
+                                console.error('Error restarting service:', error);
+                                logBox.innerHTML += `[${new Date().toLocaleTimeString()}] Error restarting service: ${error.message}\n`;
+                                // Re-enable all buttons
+                                Object.keys(restartButtons).forEach(s => {
+                                    document.getElementById(`restart-${s}`).disabled = false;
+                                });
+                                logBox.scrollTop = logBox.scrollHeight;
+                            });
+                    });
+                }
+            });
+            
+            // Copy log button
+            copyButton.addEventListener('click', function() {
+                navigator.clipboard.writeText(logBox.textContent).then(() => {
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '<i class="bi bi-check"></i> Copied!';
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy text:', err);
+                    alert('Failed to copy log contents');
+                });
+            });
+        }
+        
+        // Function to restart a service
+        function restartService(service, port, script) {
+            return fetch('/restart_service', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    service: service,
+                    port: port,
+                    script: script
+                })
+            }).then(response => response.json());
         }
     </script>
 </body>

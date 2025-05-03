@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 
 # Set environment variables
 ENV CTRL_PNL_PORT=5000
@@ -177,5 +177,6 @@ COPY --chmod=755 control_panel/ /control_panel
 COPY --chmod=755 scripts/ /scripts
 COPY --chmod=755 gradio_interface.py /gradio_interface.py
 COPY --chmod=755 hfd.sh /hfd.sh
+
 # Set the entrypoint
 ENTRYPOINT ["/start.sh"] 

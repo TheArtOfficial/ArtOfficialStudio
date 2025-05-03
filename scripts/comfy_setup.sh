@@ -16,6 +16,8 @@ if [[ "$CUDA_VERSION" == "12.8" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 elif [[ "$CUDA_VERSION" == "12.6" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu126"
+elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu125"
 elif [[ "$CUDA_VERSION" == "12.4" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu124"
 else
@@ -39,9 +41,7 @@ mkdir -p /workspace/ComfyUI/user/default/workflows
 cp -r /workflows/* /workspace/ComfyUI/user/default/workflows
 chmod -R 777 /workspace/ComfyUI/user/default/workflows
 # rm -rf /workspace/workflows
-
 mkdir -p /workspace/ComfyUI/models/checkpoints
-bash /scripts/download_controlnets.sh
 
 # Install ComfyUI nodes
 echo "Installing ComfyUI custom nodes..."
@@ -198,13 +198,6 @@ git fetch origin
 git reset --hard origin/main
 cd /workspace/ComfyUI/custom_nodes
 
-git clone https://github.com/SozeInc/ComfyUI_Soze.git
-cd ComfyUI_Soze
-git fetch origin
-git reset --hard origin/main   
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-
 git clone https://github.com/city96/ComfyUI-GGUF.git
 cd ComfyUI-GGUF
 git fetch origin
@@ -226,8 +219,14 @@ git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
-git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
+git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
 cd ComfyUI-AnimateDiff-Evolved
+git fetch origin
+git reset --hard origin/main
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/ClownsharkBatwing/RES4LYF.git
+cd RES4LYF
 git fetch origin
 git reset --hard origin/main
 cd /workspace/ComfyUI/custom_nodes
@@ -238,15 +237,28 @@ cd /workspace/ComfyUI
 ./comfyui_venv/bin/pip uninstall -y onnxruntime
 ./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19.2" hf_transfer
 VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
-# Check if "sageattention" is already installed
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
-if ! echo "$PIP_OUTPUT" | grep -q "^sageattention "; then
-    echo "Installing sageattention..."
-    git clone https://github.com/thu-ml/SageAttention.git
-    cd SageAttention
-    /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
+# Extract version of sageattention, if installed
+SAGE_VERSION=$(echo "$PIP_OUTPUT" | awk '/^sageattention / {print $2}')
+
+if [ "$SAGE_VERSION" != "2.1.1" ]; then
+    if [[ "$CUDA_VERSION" == "12.8" ]]; then
+        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl
+        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl"
+    elif [[ "$CUDA_VERSION" == "12.6" ]]; then
+        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl
+        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl"
+    elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl
+        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl"
+    elif [[ "$CUDA_VERSION" == "12.4" ]]; then
+        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl
+        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl"
+    else
+        pip install sageattention
+    fi
 else
-    echo "sageattention is already installed. Skipping setup."
+    echo "sageattention version 2.1.1 is already installed. Skipping setup."
 fi
 # Start ComfyUI
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --listen --port 8188 --preview-method auto > comfy.log 2>&1 &

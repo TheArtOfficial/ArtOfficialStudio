@@ -34,7 +34,7 @@ echo "Installing FluxGym dependencies..."
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
-pip install -r requirements.txt
+pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
 pip install -U bitsandbytes
 pip install --upgrade --force-reinstall triton==2.2.0
 deactivate

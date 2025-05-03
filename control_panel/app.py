@@ -120,6 +120,21 @@ training_tool_output = {
 training_tool_process = None
 training_tool_thread = None
 
+# Add this near the other status dictionaries
+service_restart_status = {
+    "status": "idle",
+    "message": "",
+    "service": "",
+    "port": 0,
+    "pid": None,
+    "script": "",
+    "output": []
+}
+
+# Add this with other process tracking variables
+service_restart_thread = None
+service_restart_process = None
+
 # -------------------------------------------------------------------------
 # Helper Functions
 # -------------------------------------------------------------------------
@@ -1461,6 +1476,275 @@ def model_downloader():
     download_scripts.sort(key=lambda x: x['name'].lower())
     
     return render_template('model_downloader.html', download_scripts=download_scripts)
+
+# -------------------------------------------------------------------------
+# Service Restart Functions
+# -------------------------------------------------------------------------
+
+def find_process_by_port(port):
+    """
+    Find a process using a specific port.
+    
+    Args:
+        port: The port number to check
+    
+    Returns:
+        int: PID of the process using the port, or None if not found
+    """
+    try:
+        # Run lsof to find process using the port
+        cmd = f"lsof -i :{port} -t"
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        
+        if result.returncode == 0 and result.stdout.strip():
+            # Return the first PID (there might be multiple)
+            return int(result.stdout.strip().split('\n')[0])
+        return None
+    except Exception as e:
+        print(f"Error finding process by port: {e}")
+        return None
+
+def kill_process(pid):
+    """
+    Kill a process by its PID.
+    
+    Args:
+        pid: Process ID to kill
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # First try SIGTERM for graceful shutdown
+        os.kill(pid, signal.SIGTERM)
+        
+        # Wait a bit to see if it terminates
+        time.sleep(2)
+        
+        # Check if process still exists
+        try:
+            os.kill(pid, 0)  # Signal 0 is used to check if process exists
+            # Process still exists, use SIGKILL
+            os.kill(pid, signal.SIGKILL)
+            time.sleep(1)
+        except OSError:
+            # Process has already terminated
+            pass
+            
+        return True
+    except Exception as e:
+        print(f"Error killing process: {e}")
+        return False
+
+def determine_script_path(service, script_name):
+    """
+    Determine the path to the restart script for a service.
+    
+    Args:
+        service: Service name (e.g., 'comfyui', 'kohya')
+        script_name: Name of the script file (not used anymore, keeping for backward compatibility)
+    
+    Returns:
+        str: Full path to the script
+    """
+    # Use the dedicated restart scripts from the restart_apps directory
+    return str(SCRIPTS_PATH / "restart_apps" / f"restart_{service}.sh")
+
+def run_service_restart(service, port, script_name):
+    """
+    Restart a service by first killing any existing process and then running the restart script.
+    
+    Args:
+        service: Service name
+        port: Port the service runs on
+        script_name: Name of the restart script
+    """
+    global service_restart_status, service_restart_process
+    
+    try:
+        # Update status
+        service_restart_status.update({
+            "status": "running",
+            "message": f"Attempting to restart {service}...",
+            "service": service,
+            "port": port,
+            "pid": None,
+            "script": script_name,
+            "output": []
+        })
+        
+        # Find process by port
+        pid = find_process_by_port(port)
+        service_restart_status["pid"] = pid
+        
+        if pid:
+            # Log found process
+            service_restart_status["message"] = f"Found {service} process with PID {pid}, attempting to kill..."
+            service_restart_status["output"].append(f"Found process on port {port} with PID {pid}")
+            
+            # Kill the process
+            if kill_process(pid):
+                service_restart_status["message"] = f"Successfully killed {service} process with PID {pid}"
+                service_restart_status["output"].append(f"Successfully killed process with PID {pid}")
+            else:
+                service_restart_status["message"] = f"Failed to kill {service} process with PID {pid}"
+                service_restart_status["output"].append(f"Failed to kill process with PID {pid}")
+                service_restart_status["status"] = "error"
+                return
+        else:
+            service_restart_status["message"] = f"No process found running on port {port}"
+            service_restart_status["output"].append(f"No process found running on port {port}")
+        
+        # Determine script path
+        script_path = determine_script_path(service, script_name)
+        
+        if not os.path.exists(script_path):
+            service_restart_status["message"] = f"Restart script not found at {script_path}"
+            service_restart_status["output"].append(f"Restart script not found at {script_path}")
+            service_restart_status["status"] = "error"
+            return
+            
+        # Run the restart script
+        service_restart_status["message"] = f"Running restart script for {service}..."
+        service_restart_status["output"].append(f"Running restart script: {script_path}")
+        
+        # Execute restart script
+        cmd = f"bash {script_path}"
+        service_restart_process = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            env=dict(os.environ, PYTHONUNBUFFERED="1")
+        )
+        
+        # Create a thread to read output in real-time
+        output_thread = threading.Thread(
+            target=read_process_output,
+            args=(service_restart_process, service)
+        )
+        output_thread.daemon = True
+        output_thread.start()
+        
+        # Wait for process to complete
+        return_code = service_restart_process.wait()
+        
+        # Give the output thread time to finish reading
+        time.sleep(0.5)
+        
+        if return_code == 0:
+            service_restart_status["message"] = f"{service} restarted successfully"
+            service_restart_status["status"] = "success"
+        else:
+            service_restart_status["message"] = f"Error restarting {service}. Return code: {return_code}"
+            service_restart_status["status"] = "error"
+            
+    except Exception as e:
+        service_restart_status["message"] = f"Error restarting {service}: {str(e)}"
+        service_restart_status["output"].append(f"Error: {str(e)}")
+        service_restart_status["status"] = "error"
+    finally:
+        service_restart_process = None
+
+def read_process_output(process, service):
+    """
+    Read output from a process and update the status.
+    
+    Args:
+        process: The subprocess.Popen process
+        service: The service name for status updates
+    """
+    global service_restart_status
+    
+    try:
+        for line in iter(process.stdout.readline, ''):
+            if not line.strip():
+                continue
+                
+            # Debug print to verify we're getting output
+            print(f"DEBUG - Service restart output: {line.strip()}")
+                
+            # Add to output list
+            service_restart_status["output"].append(line.strip())
+            
+            # Check for completion indicators
+            if "server starting" in line.lower() or "running on" in line.lower():
+                service_restart_status["message"] = f"{service} restarted successfully"
+                service_restart_status["status"] = "success"
+    except Exception as e:
+        print(f"Error reading process output: {e}")
+        service_restart_status["output"].append(f"Error reading process output: {str(e)}")
+
+@app.route('/restart_service', methods=['POST'])
+def restart_service():
+    """
+    API endpoint to restart a service.
+    """
+    global service_restart_thread
+    
+    try:
+        data = request.json
+        service = data.get('service')
+        port = data.get('port')
+        script = data.get('script')
+        
+        if not service or not port:
+            return jsonify({
+                'status': 'error',
+                'message': 'Missing required parameters: service, port'
+            }), 400
+            
+        # Reset status
+        service_restart_status.update({
+            "status": "running",
+            "message": f"Preparing to restart {service}...",
+            "service": service,
+            "port": port,
+            "pid": None,
+            "script": script,
+            "output": []
+        })
+        
+        # Start the restart process in a background thread
+        service_restart_thread = threading.Thread(
+            target=run_service_restart,
+            args=(service, port, script)
+        )
+        service_restart_thread.daemon = True
+        service_restart_thread.start()
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'Restarting {service} (port {port})...'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error: {str(e)}'
+        }), 500
+
+@app.route('/check_service_status', methods=['GET'])
+def check_service_status():
+    """
+    API endpoint to check the status of a service restart operation.
+    """
+    service = request.args.get('service')
+    
+    if service != service_restart_status.get('service'):
+        return jsonify({
+            'status': 'error',
+            'message': f'No restart operation in progress for {service}'
+        })
+        
+    return jsonify({
+        'status': service_restart_status.get('status'),
+        'message': service_restart_status.get('message'),
+        'service': service_restart_status.get('service'),
+        'output': service_restart_status.get('output', [])
+    })
 
 if __name__ == '__main__':
     # Validate configuration
