@@ -27,3 +27,13 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
     -o "native_wan_2.1_vae.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
+
+# Download Wan2_1_VAE_fp32.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
+    -o "Wan2_1_VAE_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_fp32.safetensors"
+
+# Download open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
+    -o "open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors"
