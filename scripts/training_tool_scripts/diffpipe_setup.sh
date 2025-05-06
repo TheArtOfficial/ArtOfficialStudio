@@ -38,7 +38,7 @@ else
     ./diffpipe_venv/bin/pip install flash_attn
 fi
 ./diffpipe_venv/bin/pip install -r requirements.txt
-./diffpipe_venv/bin/pip install gradio
+./diffpipe_venv/bin/pip install gradio toml
 # Start Diffusion Pipe UI
 echo "Starting Diffusion Pipe UI..."
 cd /workspace/diffusion-pipe && ./diffpipe_venv/bin/python gradio_interface.py

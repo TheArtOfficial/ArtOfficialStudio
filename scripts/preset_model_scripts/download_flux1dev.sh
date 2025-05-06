@@ -28,6 +28,11 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
     -o "t5xxl_fp8_e4m3fn_scaled.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp8_e4m3fn_scaled.safetensors"
 
+# Download t5xxl_fp16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
+    -o "t5xxl_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors"
+
 # Download ae.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
     -o "flux_vae.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \

@@ -240,23 +240,27 @@ VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
 # Extract version of sageattention, if installed
 SAGE_VERSION=$(echo "$PIP_OUTPUT" | awk '/^sageattention / {print $2}')
-
 if [ "$SAGE_VERSION" != "2.1.1" ]; then
-    if [[ "$CUDA_VERSION" == "12.8" ]]; then
-        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl
-        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl"
-    elif [[ "$CUDA_VERSION" == "12.6" ]]; then
-        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl
-        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl"
-    elif [[ "$CUDA_VERSION" == "12.5" ]]; then
-        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl
-        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl"
-    elif [[ "$CUDA_VERSION" == "12.4" ]]; then
-        wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl
-        /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl"
-    else
-        pip install sageattention
-    fi
+    git clone https://github.com/thu-ml/SageAttention.git
+    cd SageAttention
+    /workspace/ComfyUI/comfyui_venv/bin/pip install setuptools wheel packaging
+    /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
+    cd ..
+    # if [[ "$CUDA_VERSION" == "12.8" ]]; then
+    #     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl
+    #     /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl"
+    # elif [[ "$CUDA_VERSION" == "12.6" ]]; then
+    #     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl
+    #     /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu126-cp312-cp312-linux_x86_64.whl"
+    # elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+    #     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl
+    #     /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu125-cp312-cp312-linux_x86_64.whl"
+    # elif [[ "$CUDA_VERSION" == "12.4" ]]; then
+    #     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl
+    #     /workspace/ComfyUI/comfyui_venv/bin/pip install "sageattention-2.1.1+cu124-cp312-cp312-linux_x86_64.whl"
+    # else
+    #     pip install sageattention
+    # fi
 else
     echo "sageattention version 2.1.1 is already installed. Skipping setup."
 fi
