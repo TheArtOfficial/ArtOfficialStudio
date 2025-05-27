@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: Phantom-Video
+# Model: Phantom 13B
 # Requires-HF-Token: false
 # Model-URL: https://phantom-video.github.io/Phantom/
 
