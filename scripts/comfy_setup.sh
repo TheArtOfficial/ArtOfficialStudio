@@ -6,8 +6,9 @@ cd ComfyUI
 git fetch origin
 git reset --hard origin/master
 python3.12 -m venv comfyui_venv
-./comfyui_venv/bin/python /scripts/modifier_scripts/frontend_fix.py '' ''/workspace/ComfyUI
-./comfyui_venv/bin/python -m pip install --upgrade pip -qq
+source comfyui_venv/bin/activate
+python /scripts/modifier_scripts/frontend_fix.py '' ''/workspace/ComfyUI
+python -m pip install --upgrade pip -qq
 echo "Installing ComfyUI requirements, this may take up to 5mins..."
 CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+")
 echo "CUDA Version: $CUDA_VERSION"
@@ -23,8 +24,8 @@ elif [[ "$CUDA_VERSION" == "12.4" ]]; then
 else
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
-./comfyui_venv/bin/pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
-
+pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
+pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
 # Create model directories
 echo "Creating model directories..."
 mkdir -p models/diffusion_models
@@ -99,6 +100,7 @@ cd /workspace/ComfyUI/custom_nodes
 git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
 cd ComfyUI-WanVideoWrapper
 git fetch origin
+git checkout main
 git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
@@ -229,13 +231,21 @@ git clone https://github.com/ClownsharkBatwing/RES4LYF.git
 cd RES4LYF
 git fetch origin
 git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git
+cd ComfyUI-LTXVideo
+git fetch origin
+git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
 # Fix onnxruntime for ComfyUI
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
-./comfyui_venv/bin/pip uninstall -y onnxruntime
-./comfyui_venv/bin/pip install onnxruntime-gpu=="1.19.2" hf_transfer
+python -m pip uninstall -y onnxruntime
+python -m pip install onnxruntime-gpu=="1.19.2" hf_transfer
 VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
 # Extract version of sageattention, if installed
@@ -243,8 +253,10 @@ SAGE_VERSION=$(echo "$PIP_OUTPUT" | awk '/^sageattention / {print $2}')
 if [ "$SAGE_VERSION" != "2.1.1" ]; then
     git clone https://github.com/thu-ml/SageAttention.git
     cd SageAttention
-    /workspace/ComfyUI/comfyui_venv/bin/pip install setuptools wheel packaging
-    /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
+    python -m pip install setuptools wheel packaging
+    python setup.py bdist_wheel && python -m pip install dist/$(ls dist | grep .whl | tail -n 1)
+
+    # /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
     cd ..
     # if [[ "$CUDA_VERSION" == "12.8" ]]; then
     #     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/sageattention-2.1.1+cu128-cp312-cp312-linux_x86_64.whl
@@ -264,5 +276,6 @@ if [ "$SAGE_VERSION" != "2.1.1" ]; then
 else
     echo "sageattention version 2.1.1 is already installed. Skipping setup."
 fi
+deactivate
 # Start ComfyUI
 cd /workspace/ComfyUI && ./comfyui_venv/bin/python main.py --listen --port 8188 --preview-method auto > comfy.log 2>&1 &

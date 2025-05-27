@@ -8,6 +8,18 @@ set -e  # Exit the script if any statement returns a non-true return value
 # Start nginx service
 start_nginx() {
     echo "Starting Nginx service..."
+
+    if [ -z "$RUNPOD_POD_ID" ]; then
+        echo "RUNPOD not detected, removing /etc/nginx/sites-available/default"
+        rm -f /etc/nginx/sites-available/default
+        if [ -f /etc/nginx/sites-available/local ]; then
+            echo "Renaming /etc/nginx/sites-available/local to default"
+            mv /etc/nginx/sites-available/local /etc/nginx/sites-available/default
+        fi
+    else
+        echo "RUNPOD detected, removing /etc/nginx/sites-available/local"
+        rm -f /etc/nginx/sites-available/local
+    fi
     service nginx start
 }
 

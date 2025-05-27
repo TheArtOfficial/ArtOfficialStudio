@@ -1,0 +1,475 @@
+{
+  "id": "88ac5dad-efd7-40bb-84fe-fbaefdee1fa9",
+  "revision": 0,
+  "last_node_id": 48,
+  "last_link_id": 112,
+  "nodes": [
+    {
+      "id": 18,
+      "type": "VAEDecodeAudio",
+      "pos": [
+        1370,
+        100
+      ],
+      "size": [
+        150.93612670898438,
+        46
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "samples",
+          "type": "LATENT",
+          "link": 101
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "link": 83
+        }
+      ],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            26
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "VAEDecodeAudio"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 3,
+      "type": "KSampler",
+      "pos": [
+        1040,
+        90
+      ],
+      "size": [
+        315,
+        262
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 112
+        },
+        {
+          "name": "positive",
+          "type": "CONDITIONING",
+          "link": 110
+        },
+        {
+          "name": "negative",
+          "type": "CONDITIONING",
+          "link": 109
+        },
+        {
+          "name": "latent_image",
+          "type": "LATENT",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "slot_index": 0,
+          "links": [
+            101
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "KSampler"
+      },
+      "widgets_values": [
+        104920095063250,
+        "randomize",
+        50,
+        4,
+        "res_multistep",
+        "simple",
+        1
+      ]
+    },
+    {
+      "id": 44,
+      "type": "ConditioningZeroOut",
+      "pos": [
+        790,
+        610
+      ],
+      "size": [
+        197.712890625,
+        26
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "conditioning",
+          "type": "CONDITIONING",
+          "link": 108
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            109
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "ConditioningZeroOut"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 17,
+      "type": "EmptyAceStepLatentAudio",
+      "pos": [
+        710,
+        690
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "LATENT",
+          "type": "LATENT",
+          "links": [
+            23
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "EmptyAceStepLatentAudio"
+      },
+      "widgets_values": [
+        30,
+        1
+      ]
+    },
+    {
+      "id": 40,
+      "type": "CheckpointLoaderSimple",
+      "pos": [
+        179.5068359375,
+        87.76739501953125
+      ],
+      "size": [
+        375,
+        98
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            111
+          ]
+        },
+        {
+          "name": "CLIP",
+          "type": "CLIP",
+          "links": [
+            80
+          ]
+        },
+        {
+          "name": "VAE",
+          "type": "VAE",
+          "links": [
+            83
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "CheckpointLoaderSimple",
+        "models": [
+          {
+            "name": "ace_step_v1_3.5b.safetensors",
+            "url": "https://huggingface.co/Comfy-Org/ACE-Step_ComfyUI_repackaged/resolve/main/all_in_one/ace_step_v1_3.5b.safetensors?download=true",
+            "directory": "checkpoints"
+          }
+        ]
+      },
+      "widgets_values": [
+        "ace_step_v1_3.5b.safetensors"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    },
+    {
+      "id": 45,
+      "type": "ModelSamplingSD3",
+      "pos": [
+        715.2496948242188,
+        -31.243383407592773
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 111
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            112
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "ModelSamplingSD3"
+      },
+      "widgets_values": [
+        4.000000000000001
+      ]
+    },
+    {
+      "id": 48,
+      "type": "MarkdownNote",
+      "pos": [
+        -360.0564270019531,
+        45.08247375488281
+      ],
+      "size": [
+        499.296875,
+        571.3455200195312
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [],
+      "title": "About ACE Step",
+      "properties": {},
+      "widgets_values": [
+        "[Tutorial](http://docs.comfy.org/tutorials/audio/ace-step/ace-step-v1) | [教程](http://docs.comfy.org/zh-CN/tutorials/audio/ace-step/ace-step-v1)\n\n\n### Model Download\n\nDownload the following model and save it to the **ComfyUI/models/checkpoints** folder.\n[ace_step_v1_3.5b.safetensors](https://huggingface.co/Comfy-Org/ACE-Step_ComfyUI_repackaged/blob/main/all_in_one/ace_step_v1_3.5b.safetensors)\n\n\n### Multilingual Support\n\nCurrently, ACE-Step V1 supports multiple languages. When running, the ACE-Step model will obtain the English letters after the conversion of the corresponding different languages, and then generate music.\n\nHowever, currently in ComfyUI, we have not fully implemented the conversion from multiple languages to English letters (Japanese has been implemented at present). Therefore, if you need to use multiple languages for relevant music generation, you need to first convert the corresponding language into English letters, and then input the abbreviation of the corresponding language code at the beginning of the corresponding `lyrics`.\n\nFor example, Chinese `[zh]`, Japanese `[ja]`, Korean `[ko]`, etc.\nFor example:\n```\n[zh]ni hao\n[ja]kon ni chi wa\n[ko]an nyeong\n```\n\n---\n\n### 模型下载\n\n下载下面的模型并保存到 **ComfyUI/models/checkpoints** 文件夹下\n[ace_step_v1_3.5b.safetensors](https://huggingface.co/Comfy-Org/ACE-Step_ComfyUI_repackaged/blob/main/all_in_one/ace_step_v1_3.5b.safetensors)\n\n\n### 多语言支持\n\n目前 ACE-Step V1 是支持多语言的，运行是 ACE-Step 模型会获取到对应的不同语言转换后的英文字母，然后进行音乐生成。\n\n但目前在 ComfyUI 中我们并没有完全实现多语言到英文字母的转换（目前日文已经实现），所以如果你需要使用多语言来进行相关的音乐生成，你需要首先将对应的语言转换成英文字母，然后在对应 `lyrics` 开头输入对应语言代码的缩写。\n\n比如中文`[zh]` 日语 `[ja]` 韩语 `[ko]` 等\n比如：\n```\n[zh]ni hao\n[ja]kon ni chi wa\n[ko]an nyeong\n```"
+      ],
+      "color": "#432",
+      "bgcolor": "#653"
+    },
+    {
+      "id": 14,
+      "type": "TextEncodeAceStepAudio",
+      "pos": [
+        581.5770874023438,
+        82.79544830322266
+      ],
+      "size": [
+        413.60076904296875,
+        447.163330078125
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "link": 80
+        }
+      ],
+      "outputs": [
+        {
+          "name": "CONDITIONING",
+          "type": "CONDITIONING",
+          "links": [
+            108,
+            110
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32",
+        "Node name for S&R": "TextEncodeAceStepAudio"
+      },
+      "widgets_values": [
+        "funk, pop, soul, rock, melodic, guitar, drums, bass, keyboard, percussion, 105 BPM, energetic, upbeat, groovy, vibrant, dynamic",
+        "[Verse]\nI don't care about the view\n'Cause I exist for me and you\nI live my whole life in this planter\nI can't find my car so just call me the\nHorny gardener\n\n[Verse 2]\nMayflies land on me and tell me they just moved to town\nRemind me of my cousin Dottie she could put five hundred seeds down\nUsed to have a little guy sit beside me but he died in '22\nHmm I think that I was that little guy\nWhoa Tongue slip it wasn't mutual\n\n[Chorus]\nSticky green time in the flowery bob\nMy top shelf's looking good enough to chew\nRight now every fly in the town is talking to me and buzzing too\nDaisy Daisy can you come outside to play or else\nI'll put a garden stake through you\n\n[Verse 3]\nAll the buzzers lockin' up their stems and suckin' up their cuticles\nShe breathes my air I got her light I'm like her cute little cubical\nSome caring soul in my seat might say I'm rotting away it's pitiful\nBut she's the reason I go on and on and every single root'll crawl\n\n[Chorus]\nSticky green time in the flowery bob\nMy top shelf's looking good enough to chew\nRight now every fly in the town is talking to me and buzzing too\nDaisy Daisy can you come outside to play or else\nI'll put a garden stake through you\nOh my pot\nDon't scrape\nOh no\n\n[Verse 4]\nAh hah ahhah ahhah oohhh\nAh ahhahhahhah oh Hah\nOhhh oooh Oooh ohhh\nAh hhah Oh",
+        1
+      ]
+    },
+    {
+      "id": 19,
+      "type": "SaveAudio",
+      "pos": [
+        1539,
+        100
+      ],
+      "size": [
+        375.57366943359375,
+        112
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 26
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.32"
+      },
+      "widgets_values": [
+        "audio/ComfyUI"
+      ]
+    }
+  ],
+  "links": [
+    [
+      23,
+      17,
+      0,
+      3,
+      3,
+      "LATENT"
+    ],
+    [
+      26,
+      18,
+      0,
+      19,
+      0,
+      "AUDIO"
+    ],
+    [
+      80,
+      40,
+      1,
+      14,
+      0,
+      "CLIP"
+    ],
+    [
+      83,
+      40,
+      2,
+      18,
+      1,
+      "VAE"
+    ],
+    [
+      101,
+      3,
+      0,
+      18,
+      0,
+      "LATENT"
+    ],
+    [
+      108,
+      14,
+      0,
+      44,
+      0,
+      "CONDITIONING"
+    ],
+    [
+      109,
+      44,
+      0,
+      3,
+      2,
+      "CONDITIONING"
+    ],
+    [
+      110,
+      14,
+      0,
+      3,
+      1,
+      "CONDITIONING"
+    ],
+    [
+      111,
+      40,
+      0,
+      45,
+      0,
+      "MODEL"
+    ],
+    [
+      112,
+      45,
+      0,
+      3,
+      0,
+      "MODEL"
+    ]
+  ],
+  "groups": [
+    {
+      "id": 1,
+      "title": "Load model here",
+      "bounding": [
+        169.5068359375,
+        14.167394638061523,
+        395,
+        181.60000610351562
+      ],
+      "color": "#3f789e",
+      "font_size": 24,
+      "flags": {}
+    }
+  ],
+  "config": {},
+  "extra": {
+    "frontendVersion": "1.18.9"
+  },
+  "version": 0.4
+}

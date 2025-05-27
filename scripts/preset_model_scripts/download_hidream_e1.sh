@@ -15,12 +15,12 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
 
 # Download split_files/text_encoders/clip_g_hidream.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
-    -o "clip_g_hidream.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    -o "clip_g.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_g_hidream.safetensors"
 
 # Download split_files/text_encoders/clip_l_hidream.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
-    -o "clip_l_hidream.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    -o "clip_l.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/text_encoders/clip_l_hidream.safetensors"
 
 # Download split_files/vae/ae.safetensors

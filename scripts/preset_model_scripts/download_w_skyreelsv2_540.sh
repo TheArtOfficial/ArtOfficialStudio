@@ -18,6 +18,11 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
     -o "Wan2_1_VAE_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_fp32.safetensors"
 
+    # Download open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
+    -o "open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors"
+
 # Download Skyreels/Wan2_1-SkyReels-V2-DF-14B-540P_fp16.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "Wan2_1-SkyReels-V2-DF-14B-540P_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
@@ -38,9 +43,5 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "Wan2_1-SkyReels-V2-DF-1_3B-540P_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Skyreels/Wan2_1-SkyReels-V2-DF-1_3B-540P_fp32.safetensors"
 
-# Download open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors
-aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
-    -o "open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/open-clip-xlm-roberta-large-vit-huge-14_visual_fp32.safetensors"
 
 echo "All downloads completed!"

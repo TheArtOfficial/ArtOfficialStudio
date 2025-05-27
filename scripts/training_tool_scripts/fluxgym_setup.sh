@@ -23,6 +23,8 @@ if [[ "$CUDA_VERSION" == "12.8" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 elif [[ "$CUDA_VERSION" == "12.6" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu126"
+elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu125"
 elif [[ "$CUDA_VERSION" == "12.4" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu124"
 else

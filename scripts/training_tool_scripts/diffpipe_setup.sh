@@ -15,30 +15,33 @@ git submodule foreach --recursive git fetch origin
 git submodule foreach --recursive git reset --hard
 mv /gradio_interface.py /workspace/diffusion-pipe/gradio_interface.py
 python3.12 -m venv diffpipe_venv
-# Set appropriate PyTorch index URL
+source diffpipe_venv/bin/activate
 # Set appropriate PyTorch index URL
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 elif [[ "$CUDA_VERSION" == "12.6" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu126"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu126"
+elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu125"
 elif [[ "$CUDA_VERSION" == "12.4" ]]; then
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu124"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu124"
 else
-    TORCH_INDEX_URL="https://download.pytorch.org/whl/nightly/cu128"
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
-./diffpipe_venv/bin/pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
-./diffpipe_venv/bin/pip install packaging wheel setuptools
+python -m pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
+python -m pip install packaging wheel setuptools
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
 if [[ "$CUDA_VERSION" == "12.8" ]]; then
     wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
-    ./diffpipe_venv/bin/pip install flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
+    python -m pip install flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
 else
-    ./diffpipe_venv/bin/pip install flash_attn
+    pip install flash_attn
 fi
-./diffpipe_venv/bin/pip install -r requirements.txt
-./diffpipe_venv/bin/pip install gradio toml
+pip install -r requirements.txt
+pip install gradio toml
 # Start Diffusion Pipe UI
 echo "Starting Diffusion Pipe UI..."
+deactivate
 cd /workspace/diffusion-pipe && ./diffpipe_venv/bin/python gradio_interface.py

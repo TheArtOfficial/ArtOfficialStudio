@@ -21,12 +21,15 @@ if [[ "$CUDA_VERSION" == "12.8" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 elif [[ "$CUDA_VERSION" == "12.6" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu126"
+elif [[ "$CUDA_VERSION" == "12.5" ]]; then
+    TORCH_INDEX_URL="https://download.pytorch.org/whl/cu125"
 elif [[ "$CUDA_VERSION" == "12.4" ]]; then
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu124"
 else
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
 echo "Installing requirements..."
+pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
 pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
 #./venv/bin/pip install --force-reinstall torch torchvision torchaudio --index-url $TORCH_INDEX_URL
 echo "Installing additional packages..."

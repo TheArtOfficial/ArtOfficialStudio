@@ -1,17 +1,17 @@
 #!/bin/bash
-# Model:  WanFun Camera Control 1.3B
+# Model:  WanFun Camera Control 14B
 # Requires-HF-Token: false
 # Model-URL: https://github.com/aigc-apps/VideoX-Fun
 
-echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control-Camera..."
+echo "Downloading files from HuggingFace repository alibaba-pai/Wan2.1-Fun-V1.1-14B-Control-Camera..."
 
 # Create output directory if it doesn't exist
 mkdir -p "/workspace/ComfyUI/models"
 
 # Download diffusion_pytorch_model.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
-    -o "wan2.1-fun-v11-13b-control-camera.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/alibaba-pai/Wan2.1-Fun-V1.1-1.3B-Control-Camera/resolve/main/diffusion_pytorch_model.safetensors"
+    -o "wan2.1-fun-v11-14b-control-camera.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/alibaba-pai/Wan2.1-Fun-V1.1-14B-Control-Camera/resolve/main/diffusion_pytorch_model.safetensors"
 
 # Download split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \

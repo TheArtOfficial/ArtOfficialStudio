@@ -164,8 +164,8 @@ RUN git clone https://github.com/pyenv/pyenv.git /opt/pyenv && \
     echo 'if command -v pyenv 1>/dev/null 2>&1; then eval "$(pyenv init -)"; fi' >> /etc/profile.d/pyenv.sh && \
     chmod +x /etc/profile.d/pyenv.sh
 
-COPY nginx.conf /etc/nginx/nginx.conf
-
+COPY nginx/runpod /etc/nginx/sites-available/default
+COPY nginx/local /etc/nginx/sites-available/local
 # Create workspace and clone repository
 RUN mkdir -p /workspace
 
