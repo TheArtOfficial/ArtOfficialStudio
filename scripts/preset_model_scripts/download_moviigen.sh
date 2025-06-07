@@ -27,5 +27,10 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "wan2.1_t2v_1.3B_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_1.3B_fp16.safetensors"
 
+# Download Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors"
+
 
 echo "All downloads completed!"
