@@ -244,7 +244,7 @@ cd /workspace/ComfyUI/custom_nodes
 # Fix onnxruntime for ComfyUI
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
-python -m pip uninstall -y onnxruntime
+python -m pip uninstall -y onnxruntime-gpu
 python -m pip install onnxruntime-gpu hf_transfer
 VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)

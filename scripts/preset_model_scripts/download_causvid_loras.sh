@@ -1,5 +1,5 @@
 #!/bin/bash
-# Model: CausVid & AccVid Loras (Wan also required)
+# Model: Wan Speedup/Enhancement Loras (CausVid, Self-Forcing, etc.)
 # Requires-HF-Token: false
 # Model-URL: https://causvid.github.io/
 
@@ -7,6 +7,16 @@ echo "Downloading files from HuggingFace repository Kijai/WanVideo_comfy..."
 
 # Create output directory if it doesn't exist
 mkdir -p "/workspace/ComfyUI/models"
+
+# Download Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_AccVid_I2V_480P_14B_lora_rank32_fp16.safetensors"
+
+# Download Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors"
 
 # Download Wan21_CausVid_14B_T2V_lora_rank32.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
@@ -28,10 +38,14 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
     -o "Wan21_CausVid_bidirect2_T2V_1_3B_lora_rank32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_CausVid_bidirect2_T2V_1_3B_lora_rank32.safetensors"
 
-# Download Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors
+# Download Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
-    -o "Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_AccVid_T2V_14B_lora_rank32_fp16.safetensors"
+    -o "Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_T2V_14B_MoviiGen_lora_rank32_fp16.safetensors"
 
+# Download Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors"
 
 echo "All downloads completed!"

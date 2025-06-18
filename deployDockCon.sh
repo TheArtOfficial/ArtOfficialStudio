@@ -1,3 +1,5 @@
+#!/bin/bash
+
 docker run -it --gpus all --shm-size=32g \
 --rm \
 -p 80:80 \
