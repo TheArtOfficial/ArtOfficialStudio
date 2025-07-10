@@ -5,7 +5,7 @@ Join the community! I always love to see the work everyone is doing; it helps gu
 [![Subscribe on YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@theTheArt-OfficialTrainer)
 [![Support on Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/theartofficialtrainer)
 [![Join our Discord server](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mxHCj7hxjD)
-[![Follow on X](https://img.shields.io/badge/Follow_on_X-000000?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAgMTIwIj48cmVjdCB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iYmxhY2siLz48cGF0aCBkPSJNODEuOCAyOS43aC05LjZMNjAuMiA1OS4yIDM5LjggMjkuN2gtOS42bDI1LjkgMzcuMi0yNy4xIDM3LjloOS42TDYwLjIgNjlsMjAuNCAzNS44aDkuNkw2My4xIDY2LjlsMjYuNy0zNy4yeiIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://x.com/the_artofficial)
+[![Follow on X](https://img.shields.io/badge/Follow_on_X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/the_artofficial)
 
 
 
