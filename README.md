@@ -83,6 +83,14 @@ If your Nvidia Driver does not support cu128, there are other cuda versions avai
 
 `ghcr.io/theartofficial/artofficialstudio:cu124latest`
 
+`theartofficial/artofficialstudio:latest`
+
+`theartofficial/artofficialstudio:cu126latest`
+
+`theartofficial/artofficialstudio:cu125latest`
+
+`theartofficial/artofficialstudio:cu124latest`
+
 Nvidia 50xx series requires cu128, which is why that is my official release. Drivers are backward compatible, so there is no reason not to update to the latest driver that supports the latest CUDA version. But for those who cannot, the cu126 or cu125 version should work the same.
 
 
