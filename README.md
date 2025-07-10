@@ -1,4 +1,4 @@
-# **ArtOfficial Studio: The 1-Stop Solution for All Your AI Needs**
+# **ArtOfficial Studio: The 1-Stop Solution for Your AI Needs**
 
 Join the community! I always love to see the work everyone is doing to help guide the project going forward.
 
