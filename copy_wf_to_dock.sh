@@ -1,1 +1,2 @@
-rsync -av --exclude="archive" --exclude=".ipynb_checkpoints" /home/art-official/vol1/ComfyUI/user/default/workflows/ /home/art-official/ArtOfficial/RunPod/workflows/
+rsync -av --exclude="archive" --exclude=".ipynb_checkpoints" /home/theartofficial/comfyvol/ComfyUI/user/default/workflows/ /mnt/c/Users/thear/Documents/AiProjects/RunPod/workflows
+rsync -av --exclude="archive" --exclude=".ipynb_checkpoints" /home/theartofficial/comfyvol/ComfyUI/user/default/workflows/ /mnt/c/Users/thear/Documents/AiProjects/ComfyUI/user/default/workflows

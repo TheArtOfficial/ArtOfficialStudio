@@ -15,6 +15,7 @@ start_nginx() {
         if [ -f /etc/nginx/sites-available/local ]; then
             echo "Renaming /etc/nginx/sites-available/local to default"
             mv /etc/nginx/sites-available/local /etc/nginx/sites-available/default
+            ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
         fi
     else
         echo "RUNPOD detected, removing /etc/nginx/sites-available/local"

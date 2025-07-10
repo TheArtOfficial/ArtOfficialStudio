@@ -100,7 +100,6 @@ cd /workspace/ComfyUI/custom_nodes
 git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
 cd ComfyUI-WanVideoWrapper
 git fetch origin
-git checkout main
 git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
@@ -125,7 +124,7 @@ cd /workspace/ComfyUI/custom_nodes
 git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git
 cd ComfyUI-Impact-Pack
 git fetch origin
-git reset --hard origin/main
+git reset --hard origin/Main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
@@ -211,7 +210,6 @@ git clone https://github.com/logtd/ComfyUI-HunyuanLoom.git
 cd ComfyUI-HunyuanLoom
 git fetch origin
 git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
 git clone https://github.com/jags111/efficiency-nodes-comfyui.git
@@ -238,6 +236,13 @@ git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git
 cd ComfyUI-LTXVideo
 git fetch origin
 git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/christian-byrne/audio-separation-nodes-comfyui.git
+cd audio-separation-nodes-comfyui
+git fetch origin
+git reset --hard origin/master
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
