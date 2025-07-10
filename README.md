@@ -1,5 +1,8 @@
 # **ArtOfficial Studio: Docker Container Installation Guide**
 
+[![Join our Discord server](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mxHCj7hxjD)
+
+
 ## **Preface**
 
 Welcome to **ArtOfficial Studio** — a powerful Docker-based container application designed to make cutting-edge AI tools and model training accessible to everyone. The first-time set-up is simple, just install docker, and then it is only one click to pull all of the latest models, workflows, and ComfyUI features. Whether you're an artist, researcher, or enthusiast, this tool offers:
