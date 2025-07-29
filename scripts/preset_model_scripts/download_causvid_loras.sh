@@ -48,4 +48,14 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
     -o "Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_T2V_14B_lightx2v_cfg_step_distill_lora_rank32.safetensors"
 
+# Download Pusa/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Pusa/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors"
+
+# Download Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
+    -o "lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
+
 echo "All downloads completed!"

@@ -125,7 +125,6 @@ git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git
 cd ComfyUI-Impact-Pack
 git fetch origin
 git reset --hard origin/Main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
 # LatentSync Wrapper
@@ -243,6 +242,33 @@ git clone https://github.com/christian-byrne/audio-separation-nodes-comfyui.git
 cd audio-separation-nodes-comfyui
 git fetch origin
 git reset --hard origin/master
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git
+cd ComfyUI-SeedVR2_VideoUpscaler
+git fetch origin
+git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
+cd ComfyUI-Custom-Scripts
+git fetch origin
+git reset --hard origin/main
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/AIWarper/ComfyUI-NormalCrafterWrapper.git
+cd ComfyUI-NormalCrafterWrapper
+git fetch origin
+git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/akatz-ai/ComfyUI-DepthCrafter-Nodes.git
+cd ComfyUI-DepthCrafter-Nodes
+git fetch origin
+git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
