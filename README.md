@@ -2,9 +2,15 @@
 
 Join the community! I always love to see the work everyone is doing; it helps guide the project going forward.
 
-[![Join our Discord server](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mxHCj7hxjD)
-[![Subscribe on YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@theTheArt-OfficialTrainer)
+[![Subscribe on YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@TheArt-OfficialTrainer)
 [![Support on Patreon](https://img.shields.io/badge/Patreon-F96854?style=for-the-badge&logo=patreon&logoColor=white)](https://www.patreon.com/theartofficialtrainer)
+[![Join our Discord server](https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/mxHCj7hxjD)
+[![X](https://img.shields.io/badge/%E2%80%89X%E2%80%89-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/the_artofficial)
+
+
+
+
+
 
 
 ## **Preface**
