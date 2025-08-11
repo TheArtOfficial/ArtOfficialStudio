@@ -360,7 +360,7 @@ To filter Pods by cuda version, use this dropdown (Cu12.8 Template won't work wi
 
 ### 1. Go to RunPod:
 
--   Sign in to your account at [RunPod.io](https://runpod.io).
+-   Sign in to your account at [RunPod.io](https://runpod.io?ref=sibibj3j).
 
 ### 2. Select Proper Cuda Version Template
 
