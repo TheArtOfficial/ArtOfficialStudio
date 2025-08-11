@@ -26,6 +26,9 @@ else
 fi
 /workspace/ComfyUI/comfyui_venv/bin/pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
+/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_frontend_package --upgrade
+/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_workflow_templates --upgrade
+/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_embedded_docs --upgrade
 # Create model directories
 echo "Creating model directories..."
 mkdir -p models/diffusion_models

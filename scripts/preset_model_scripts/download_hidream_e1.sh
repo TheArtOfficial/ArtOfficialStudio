@@ -1,7 +1,7 @@
 #!/bin/bash
-# Model: HiDream-E1-Full
+# Model: HiDream-E1-1-Full
 # Requires-HF-Token: false
-# Model-URL: https://huggingface.co/HiDream-ai/HiDream-E1-Full
+# Model-URL: https://huggingface.co/HiDream-ai/HiDream-E1-1
 
 echo "Downloading files from HuggingFace repository Comfy-Org/HiDream-I1_ComfyUI..."
 
@@ -10,8 +10,8 @@ mkdir -p "/workspace/ComfyUI/models"
 
 # Download split_files/diffusion_models/hidream_e1_full_bf16.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
-    -o "hidream_e1_full_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_e1_full_bf16.safetensors"
+    -o "hidream_e1_1_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Comfy-Org/HiDream-I1_ComfyUI/resolve/main/split_files/diffusion_models/hidream_e1_1_bf16.safetensors"
 
 # Download split_files/text_encoders/clip_g_hidream.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \

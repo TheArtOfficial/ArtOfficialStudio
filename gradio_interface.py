@@ -180,6 +180,8 @@ def create_training_config(
     text_encoder_2_lr: float,
     llama3_4bit: bool,
     max_llama3_sequence_length: int,
+    min_t: float,
+    max_t: float,
     
     # Adapter parameters
     lora_dtype: str,
@@ -226,6 +228,8 @@ def create_training_config(
         "llama3_path": llama3_path if llama3_path else None,
         "clip_path": clip_path if clip_path else None,
         "dtype": dtype if dtype else "bfloat16",
+        "min_t": min_t if min_t else None,
+        "max_t": max_t if max_t else None,
     }
     
     # Only include parameters that are defined in the model config
@@ -255,6 +259,12 @@ def create_training_config(
     
     if "max_llama3_sequence_length" in model_configs:
         model_config["max_llama3_sequence_length"] = max_llama3_sequence_length
+
+    if "min_t" in model_configs:
+        model_config["min_t"] = min_t
+
+    if "max_t" in model_configs:
+        model_config["max_t"] = max_t
     
     training_config = {
         "output_dir": output_dir,
@@ -547,7 +557,7 @@ def toggle_dataset_option(option):
         )
 
 def train_model(model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, ckpt_path, diffusers_path,
-                transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+                transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, min_t, max_t, optimizer_type, betas, weight_decay, eps,
                 gradient_accumulation_steps, num_repeats, resolutions, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key,
                 timestep_sample_method, flux_shift, lumina_shift, unet_lr, text_encoder_1_lr, text_encoder_2_lr, llama3_4bit, max_llama3_sequence_length
                 ):
@@ -633,6 +643,8 @@ def train_model(model_name, model_type, dataset_path, config_dir, output_dir, ep
             clip_path=clip_path,
             dtype=dtype,
             transformer_dtype=transformer_dtype,
+            min_t=min_t,
+            max_t=max_t,
             lora_dtype=lora_dtype,
             rank=rank,
             only_double_blocks=only_double_blocks,
@@ -1304,7 +1316,9 @@ def update_model_config(model_name):
         "text_encoder_1_lr",
         "text_encoder_2_lr",
         "llama3_4bit",
-        "max_llama3_sequence_length"
+        "max_llama3_sequence_length",
+        "min_t",
+        "max_t"
     ]
     
     for field in optional_fields:
@@ -1313,6 +1327,8 @@ def update_model_config(model_name):
             if field in ["flux_shift", "lumina_shift", "llama3_4bit"]:
                 defaults[field] = config.get(field, False)
             elif field in ["unet_lr", "text_encoder_1_lr", "text_encoder_2_lr"]:
+                defaults[field] = config.get(field, None)
+            elif field in ["min_t", "max_t"]:
                 defaults[field] = config.get(field, None)
             elif field == "max_llama3_sequence_length":
                 defaults[field] = config.get(field, 128)
@@ -1858,6 +1874,18 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                     value=False,
                     visible=True
                 )
+
+            with gr.Row():
+                min_t = gr.Number(
+                    label="min_t",
+                    value=0.0,
+                    visible=True
+                )
+                max_t = gr.Number(
+                    label="max_t",
+                    value=0.875,
+                    visible=True
+                )  
             
             max_llama3_sequence_length = gr.Number(
                 label="Max LLaMA3 Sequence Length",
@@ -1969,7 +1997,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
         with gr.Row():
             optimizer_type = gr.Dropdown(
                 label="Optimizer Type",
-                choices=['adamw', 'adamw8bit', 'adamw_optimi', 'stableadamw', 'sgd', 'adamw8bitKahan', 'offload'],
+                choices=['adamw', 'adamw8bit', 'adamw_optimi', 'automagic', 'stableadamw', 'sgd', 'adamw8bitKahan', 'offload'],
                 value="adamw_optimi",
             )
             betas = gr.Textbox(
@@ -2182,7 +2210,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
     
     def handle_train_click(
         model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype, ckpt_path, diffusers_path,
-        transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+        transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, min_t, max_t, optimizer_type, betas, weight_decay, eps,
         gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar, num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step, eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes, activation_checkpointing, partition_method, save_dtype, caching_batch_size, steps_per_print, video_clip_mode, resume_from_checkpoint, only_double_blocks, enable_wandb, wandb_run_name, wandb_tracker_name, wandb_api_key,
         timestep_sample_method, flux_shift, lumina_shift, unet_lr, text_encoder_1_lr, text_encoder_2_lr, llama3_4bit, max_llama3_sequence_length
     ):
@@ -2213,6 +2241,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             clip_path=clip_path,
             dtype=dtype,
             transformer_dtype=transformer_dtype,
+            min_t=min_t,
+            max_t=max_t,
             optimizer_type=optimizer_type,
             betas=betas,
             weight_decay=weight_decay,
@@ -2372,7 +2402,7 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
         fn=handle_train_click,
         inputs=[
             model_name, model_type, dataset_path, config_dir, output_dir, epochs, batch_size, lr, save_every, eval_every, rank, lora_dtype,
-            ckpt_path, diffusers_path, transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, optimizer_type, betas, weight_decay, eps,
+            ckpt_path, diffusers_path, transformer_path, vae_path, llm_path, llama3_path, clip_path, dtype, transformer_dtype, min_t, max_t, optimizer_type, betas, weight_decay, eps,
             gradient_accumulation_steps, num_repeats, resolutions_input, enable_ar_bucket, min_ar, max_ar,
             num_ar_buckets, frame_buckets, ar_buckets, gradient_clipping, warmup_steps, blocks_to_swap, eval_before_first_step,
             eval_micro_batch_size_per_gpu, eval_gradient_accumulation_steps, checkpoint_every_n_minutes,
@@ -2449,7 +2479,9 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
                 flux_shift: gr.update(value=False, visible=False),
                 lumina_shift: gr.update(value=False, visible=False),
                 llama3_4bit: gr.update(value=False, visible=False),
-                max_llama3_sequence_length: gr.update(value=128, visible=False)
+                max_llama3_sequence_length: gr.update(value=128, visible=False),
+                min_t: gr.update(value=0.0, visible=False),
+                max_t: gr.update(value=0.875, visible=False)
             }
         
         # Get model type from config
@@ -2564,6 +2596,18 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             visible="max_llama3_sequence_length" in config,
             interactive=True
         )
+
+        updates[min_t] = gr.update(
+            value=config.get("min_t", 0.0),
+            visible="min_t" in config,
+            interactive=True
+        )
+        
+        updates[max_t] = gr.update(
+            value=config.get("max_t", 0.875),
+            visible="max_t" in config,
+            interactive=True
+        )
         
         return updates
 
@@ -2612,6 +2656,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             llama3_path,
             dtype,
             transformer_dtype,
+            min_t,
+            max_t,
             timestep_sample_method,
             unet_lr,
             text_encoder_1_lr,
@@ -2641,6 +2687,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             llama3_path,
             dtype,
             transformer_dtype,
+            min_t,
+            max_t,
             timestep_sample_method,
             unet_lr,
             text_encoder_1_lr,
@@ -2704,6 +2752,8 @@ with gr.Blocks(theme=theme, css=custom_log_box_css) as demo:
             llama3_path,
             dtype,
             transformer_dtype,
+            min_t,
+            max_t,
             timestep_sample_method,
             unet_lr,
             text_encoder_1_lr,

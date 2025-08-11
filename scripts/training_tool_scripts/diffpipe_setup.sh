@@ -28,19 +28,14 @@ elif [[ "$CUDA_VERSION" == "12.4" ]]; then
 else
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
-python -m pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
-python -m pip install packaging wheel setuptools
+./diffpipe_venv/bin/pip install torch==2.7.1 torchvision torchaudio --index-url $TORCH_INDEX_URL
+./diffpipe_venv/bin/pip install packaging wheel setuptools
 sed -i '/^torch$/d' requirements.txt
 sed -i '/^torchaudio$/d' requirements.txt
 sed -i '/^torchvision$/d' requirements.txt
-if [[ "$CUDA_VERSION" == "12.8" ]]; then
-    wget -c https://huggingface.co/TheArtOfficialTrainer/container_whls/resolve/main/flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
-    python -m pip install flash_attn-2.7.4.post1-cp312-cp312-linux_x86_64.whl
-else
-    pip install flash_attn
-fi
-pip install -r requirements.txt
-pip install gradio toml
+python -m pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.13/flash_attn-2.8.1+cu128torch2.7-cp312-cp312-linux_x86_64.whl
+./diffpipe_venv/bin/pip install -r requirements.txt
+./diffpipe_venv/bin/pip install gradio toml
 # Start Diffusion Pipe UI
 echo "Starting Diffusion Pipe UI..."
 deactivate

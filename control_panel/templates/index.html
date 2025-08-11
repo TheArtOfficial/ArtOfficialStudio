@@ -860,6 +860,12 @@
                                                 </div>
                                                 <p class="mb-1">Lora training for diffusion models</p>
                                             </button>
+                                             <button class="list-group-item list-group-item-action" id="empty-trash">
+                                                 <div class="d-flex w-100 justify-content-between">
+                                                     <h5 class="mb-1">Empty Trash</h5>
+                                                 </div>
+                                                 <p class="mb-1">Clear /workspace/.Trash-0 (force delete with permission fixes)</p>
+                                             </button>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
@@ -1557,6 +1563,33 @@
                     alert('Failed to copy log contents');
                 });
             });
+
+            // Empty Trash handler
+            const emptyTrashBtn = document.getElementById('empty-trash');
+            if (emptyTrashBtn) {
+                emptyTrashBtn.addEventListener('click', function() {
+                    const timestamp = new Date().toLocaleTimeString();
+                    logBox.innerHTML += `[${timestamp}] Attempting to empty /workspace/.Trash-0 ...\n`;
+                    logBox.scrollTop = logBox.scrollHeight;
+
+                    fetch('/clear_trash', { method: 'POST' })
+                        .then(res => res.json().then(body => ({ ok: res.ok, body })))
+                        .then(({ ok, body }) => {
+                            const ts = new Date().toLocaleTimeString();
+                            if (ok && body.status === 'success') {
+                                logBox.innerHTML += `[${ts}] SUCCESS: ${body.message}\n`;
+                            } else {
+                                logBox.innerHTML += `[${ts}] ERROR: ${body.message}\n`;
+                            }
+                            logBox.scrollTop = logBox.scrollHeight;
+                        })
+                        .catch(err => {
+                            const ts = new Date().toLocaleTimeString();
+                            logBox.innerHTML += `[${ts}] ERROR: ${err.message}\n`;
+                            logBox.scrollTop = logBox.scrollHeight;
+                        });
+                });
+            }
         }
         
         // Function to restart a service

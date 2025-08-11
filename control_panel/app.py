@@ -1746,6 +1746,87 @@ def check_service_status():
         'output': service_restart_status.get('output', [])
     })
 
+# -------------------------------------------------------------------------
+# Storage Utilities
+# -------------------------------------------------------------------------
+
+def clear_trash_directory(trash_dir: str = "/workspace/.Trash-0"):
+    """
+    Attempt to clear the contents of the specified trash directory.
+
+    Tries to fix common permission issues and force delete all contents
+    (including hidden files and directories).
+
+    Returns:
+        dict: { status: 'success'|'error', message: str }
+    """
+    try:
+        # If the directory does not exist, nothing to do
+        if not os.path.exists(trash_dir):
+            return {
+                'status': 'success',
+                'message': f'Trash folder {trash_dir} not found. Nothing to clear.'
+            }
+
+        # Build a robust shell command to clear contents, including hidden files
+        # 1) Relax permissions and ownership where possible
+        # 2) Remove regular and hidden entries
+        # 3) Fallback to find -exec rm -rf
+        shell_cmd = (
+            f'if [ -d "{trash_dir}" ]; then '
+            f'  chmod -R u+rwX "{trash_dir}" 2>/dev/null || true; '
+            f'  chown -R $(id -u):$(id -g) "{trash_dir}" 2>/dev/null || true; '
+            f'  rm -rf {trash_dir}/* {trash_dir}/.[!.]* {trash_dir}/..?* 2>/dev/null || true; '
+            f'  find "{trash_dir}" -mindepth 1 -exec rm -rf {{}} + 2>/dev/null || true; '
+            f'fi'
+        )
+
+        result = subprocess.run(
+            ["bash", "-lc", shell_cmd],
+            capture_output=True,
+            text=True
+        )
+
+        # Verify directory is empty
+        remaining = []
+        try:
+            remaining = os.listdir(trash_dir)
+        except Exception:
+            # If we cannot list it, assume it's fine if the directory is gone
+            if not os.path.exists(trash_dir):
+                remaining = []
+
+        if len(remaining) == 0:
+            return {
+                'status': 'success',
+                'message': f'Successfully cleared contents of {trash_dir}.'
+            }
+        else:
+            # Include some stderr to help diagnose
+            stderr_tail = (result.stderr or '').strip().splitlines()[-3:]
+            stderr_msg = ('\n'.join(stderr_tail)).strip()
+            return {
+                'status': 'error',
+                'message': (
+                    f'Attempted to clear {trash_dir}, but some items could not be removed.\n'
+                    f'Remaining entries (first 5 shown): {remaining[:5]}\n'
+                    f'Errors (if any): {stderr_msg or "None"}'
+                )
+            }
+    except Exception as e:
+        return {
+            'status': 'error',
+            'message': f'Error clearing trash: {str(e)}'
+        }
+
+
+@app.route('/clear_trash', methods=['POST'])
+def clear_trash():
+    """API endpoint to clear /workspace/.Trash-0 contents."""
+    result = clear_trash_directory("/workspace/.Trash-0")
+    http_status = 200 if result.get('status') == 'success' else 500
+    return jsonify(result), http_status
+
 if __name__ == '__main__':
     # Validate configuration
     ensure_directories_exist()
