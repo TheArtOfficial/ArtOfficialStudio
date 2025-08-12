@@ -1,5 +1,5 @@
 @echo off
-:: Remove all containers (running and stopped)
+:: Stop and remove ArtOfficialStudio container
 wsl -e bash -c "docker stop aostudio"
 wsl -e bash -c "docker rm aostudio"
 
