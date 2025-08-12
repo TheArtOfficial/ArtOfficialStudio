@@ -28,5 +28,14 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/loras" \
     -o "lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank128_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank128_bf16.safetensors"
 
+# Download Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V1.1/high_noise_model.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
+    -o "high_noise_model.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V1.1/high_noise_model.safetensors"
+
+# Download Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V1.1/low_noise_model.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
+    -o "low_noise_model.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/lightx2v/Wan2.2-Lightning/resolve/main/Wan2.2-T2V-A14B-4steps-lora-rank64-Seko-V1.1/low_noise_model.safetensors?download=true"
 
 echo "All downloads completed!"
