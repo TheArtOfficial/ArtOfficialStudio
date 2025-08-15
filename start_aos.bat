@@ -12,4 +12,4 @@ wsl -e bash -c "mkdir -p /home/theartofficial/comfyvol"
 
 :: Run the container
 :: Remember to Change /home/theartofficial/comfyvol to the path in your WSL subsystem that you want to use!
-wsl -e bash -c "docker run --name aostudio --gpus all --shm-size=32g -it -p 80:80 -v /home/theartofficial/comfyvol:/workspace ghcr.io/theartofficial/artofficialstudio:latest"
+wsl -e bash -c "docker run --name aostudio --gpus all --shm-size=32g -it -p 8080:80 -v /home/theartofficial/comfyvol:/workspace ghcr.io/theartofficial/artofficialstudio:latest"
