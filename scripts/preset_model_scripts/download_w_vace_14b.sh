@@ -18,20 +18,20 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "wan2.1_t2v_14B_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_14B_bf16.safetensors"
 
-# Download split_files/diffusion_models/wan2.1_t2v_14B_fp16.safetensors
+# Download Wan2_1-T2V-14B_fp8_e4m3fn_scaled_KJ.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
-    -o "wan2.1_t2v_14B_fp8_e4m3fn.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_14B_fp8_e4m3fn.safetensors"
+    -o "Wan2_1-T2V-14B_fp8_e4m3fn_scaled_KJ.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/T2V/Wan2_1-T2V-14B_fp8_e4m3fn_scaled_KJ.safetensors"
 
 # Download Wan2_1-VACE_module_14B_bf16.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "Wan2_1-VACE_module_14B_bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-VACE_module_14B_bf16.safetensors"
 
-# Download Wan2_1-VACE_module_14B_fp8_e4m3fn.safetensors
+# Download Wan2_1-VACE-module-14B_fp8_e4m3fn_scaled_KJ.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
-    -o "Wan2_1-VACE_module_14B_fp8_e4m3fn.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
-    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1-VACE_module_14B_fp8_e4m3fn.safetensors"
+    -o "Wan2_1-VACE-module-14B_fp8_e4m3fn_scaled_KJ.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/VACE/Wan2_1-VACE-module-14B_fp8_e4m3fn_scaled_KJ.safetensors"
 
 # Download Wan2_1_VAE_fp32.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \

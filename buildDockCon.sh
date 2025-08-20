@@ -2,7 +2,7 @@ cd "$(pwd)"
 
 dos2unix convertToUnix.sh
 bash convertToUnix.sh
-
+bash copy_wf_to_dock.sh
 
 docker build -f Dockerfile -t theartofficial/artofficialstudio:latest .
 

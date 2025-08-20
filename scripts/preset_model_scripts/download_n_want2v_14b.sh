@@ -18,6 +18,11 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "wan2.1_t2v_14B_fp16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_14B_fp16.safetensors"
 
+# Download split_files/diffusion_models/wan2.1_t2v_14B_fp8_scaled.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
+    -o "wan2.1_t2v_14B_fp8_scaled.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/diffusion_models/wan2.1_t2v_14B_fp8_scaled.safetensors"
+
 # Download split_files/vae/wan_2.1_vae.safetensors
 aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/vae" \
     -o "native_wan_2.1_vae.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
