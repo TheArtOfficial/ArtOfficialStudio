@@ -1,15 +1,23 @@
 # Set up ComfyUI
 echo "Setting up ComfyUI..."
 cd /workspace
-git clone https://github.com/comfyanonymous/ComfyUI.git
-cd ComfyUI
-git fetch origin
-git reset --hard origin/master
-python3.12 -m venv comfyui_venv
+if [ ! -d "/workspace/ComfyUI" ]; then
+    git clone https://github.com/comfyanonymous/ComfyUI.git
+    cd ComfyUI
+    git fetch origin
+    git reset --hard origin/master
+else
+    cd ComfyUI
+fi
+if [ ! -d "/workspace/ComfyUI/comfyui_venv" ]; then
+    python3.12 -m venv comfyui_venv
+fi
 source comfyui_venv/bin/activate
+
 python /scripts/modifier_scripts/frontend_fix.py '' ''/workspace/ComfyUI
 python -m pip install --upgrade pip -qq
 echo "Installing ComfyUI requirements, this may take up to 5mins..."
+
 CUDA_VERSION=$(nvcc --version | grep -oP "release \K[0-9]+\.[0-9]+")
 echo "CUDA Version: $CUDA_VERSION"
 # Set appropriate PyTorch index URL
@@ -24,285 +32,350 @@ elif [[ "$CUDA_VERSION" == "12.4" ]]; then
 else
     TORCH_INDEX_URL="https://download.pytorch.org/whl/cu128"
 fi
-/workspace/ComfyUI/comfyui_venv/bin/pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
-/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_frontend_package --upgrade
-/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_workflow_templates --upgrade
-/workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_embedded_docs --upgrade
+
+if [ ! -d "/workspace/ComfyUI/comfyui_venv/lib/python3.12/site-packages/torch" ]; then
+    /workspace/ComfyUI/comfyui_venv/bin/pip install torch torchvision torchaudio --index-url $TORCH_INDEX_URL
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt --extra-index-url $TORCH_INDEX_URL
+    /workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_frontend_package --upgrade
+    /workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_workflow_templates --upgrade
+    /workspace/ComfyUI/comfyui_venv/bin/pip install comfyui_embedded_docs --upgrade
+fi
 # Create model directories
 echo "Creating model directories..."
-mkdir -p models/diffusion_models
-mkdir -p models/checkpoints
-mkdir -p models/vae
-mkdir -p models/controlnet
-mkdir -p models/loras
-mkdir -p models/clip_vision
-mkdir -p models/text_encoders
 
-# Set up directory structure
-echo "Setting up directory structure..."
-mkdir -p /workspace/ComfyUI/user/default/workflows
-cp -r /workflows/* /workspace/ComfyUI/user/default/workflows
-chmod -R 777 /workspace/ComfyUI/user/default/workflows
-# rm -rf /workspace/workflows
-mkdir -p /workspace/ComfyUI/models/checkpoints
+if [ ! -d "/workspace/ComfyUI/models/diffusion_models" ]; then
+    mkdir -p models/diffusion_models
+fi
+if [ ! -d "/workspace/ComfyUI/models/checkpoints" ]; then
+    mkdir -p models/checkpoints
+fi
+if [ ! -d "/workspace/ComfyUI/models/vae" ]; then
+    mkdir -p models/vae
+fi
+if [ ! -d "/workspace/ComfyUI/models/controlnet" ]; then
+    mkdir -p models/controlnet
+fi
+if [ ! -d "/workspace/ComfyUI/models/loras" ]; then
+    mkdir -p models/loras
+fi
+if [ ! -d "/workspace/ComfyUI/models/clip_vision" ]; then
+    mkdir -p models/clip_vision
+fi
+if [ ! -d "/workspace/ComfyUI/models/text_encoders" ]; then
+    mkdir -p models/text_encoders
+fi
+
+if [ ! -d "/workspace/ComfyUI/user/default/workflows" ]; then
+    # Set up directory structure
+    echo "Setting up directory structure..."
+    mkdir -p /workspace/ComfyUI/user/default/workflows
+    cp -r /workflows/* /workspace/ComfyUI/user/default/workflows
+    chmod -R 777 /workspace/ComfyUI/user/default/workflows
+    # rm -rf /workspace/workflows
+fi
 
 # Install ComfyUI nodes
 echo "Installing ComfyUI custom nodes..."
 cd /workspace/ComfyUI/custom_nodes
 
-# ComfyUI Manager
-git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-cd ComfyUI-Manager
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Manager" ]; then
+    # ComfyUI Manager
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+    cd ComfyUI-Manager
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes" ]; then
+    # KJNodes
+    git clone https://github.com/kijai/ComfyUI-KJNodes.git
+    cd ComfyUI-KJNodes
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes" ]; then
+    # Crystools
+    git clone https://github.com/crystian/ComfyUI-Crystools.git
+    cd ComfyUI-Crystools
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-KJNodes" ]; then
+    # VideoHelperSuite
+    git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
+    cd ComfyUI-VideoHelperSuite
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+    /workspace/ComfyUI/comfyui_venv/bin/python /scripts/modifier_scripts/ensure_previews.py /workspace/ComfyUI/user/default/comfy.settings.json
+fi
 
-# KJNodes
-git clone https://github.com/kijai/ComfyUI-KJNodes.git
-cd ComfyUI-KJNodes
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Segment-Anything-2" ]; then
+    git clone https://github.com/kijai/ComfyUI-Segment-Anything-2.git
+    cd ComfyUI-Segment-Anything-2
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# Crystools
-git clone https://github.com/crystian/ComfyUI-Crystools.git
-cd ComfyUI-Crystools
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Florence2" ]; then
+    git clone https://github.com/kijai/ComfyUI-Florence2.git
+    cd ComfyUI-Florence2
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# VideoHelperSuite
-git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
-cd ComfyUI-VideoHelperSuite
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-/workspace/ComfyUI/comfyui_venv/bin/python /scripts/modifier_scripts/ensure_previews.py /workspace/ComfyUI/user/default/comfy.settings.json
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-WanVideoWrapper" ]; then
+    git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
+    cd ComfyUI-WanVideoWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# Segment Anything 2
-git clone https://github.com/kijai/ComfyUI-Segment-Anything-2.git
-cd ComfyUI-Segment-Anything-2
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-HunyuanVideoWrapper" ]; then
+    git clone https://github.com/kijai/ComfyUI-HunyuanVideoWrapper.git
+    cd ComfyUI-HunyuanVideoWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# Florence2
-git clone https://github.com/kijai/ComfyUI-Florence2.git
-cd ComfyUI-Florence2
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Easy-Use" ]; then
+    git clone https://github.com/yolain/ComfyUI-Easy-Use.git
+    cd ComfyUI-Easy-Use
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# WanVideoWrapper
-git clone https://github.com/kijai/ComfyUI-WanVideoWrapper.git
-cd ComfyUI-WanVideoWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Impact-Pack" ]; then
+    git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git
+    cd ComfyUI-Impact-Pack
+    git fetch origin
+    git reset --hard origin/Main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# HunyuanVideoWrapper
-git clone https://github.com/kijai/ComfyUI-HunyuanVideoWrapper.git
-cd ComfyUI-HunyuanVideoWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-LatentSyncWrapper" ]; then
+    git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git
+    cd ComfyUI-LatentSyncWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    /workspace/ComfyUI/comfyui_venv/bin/pip install insightface
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# Easy-Use Nodes
-git clone https://github.com/yolain/ComfyUI-Easy-Use.git
-cd ComfyUI-Easy-Use
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-FramePackWrapper" ]; then
+    git clone https://github.com/kijai/ComfyUI-FramePackWrapper.git
+    cd ComfyUI-FramePackWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# Impact Pack
-git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack.git
-cd ComfyUI-Impact-Pack
-git fetch origin
-git reset --hard origin/Main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI_essentials" ]; then
+    git clone https://github.com/cubiq/ComfyUI_essentials.git
+    cd ComfyUI_essentials
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# LatentSync Wrapper
-git clone https://github.com/ShmuelRonen/ComfyUI-LatentSyncWrapper.git
-cd ComfyUI-LatentSyncWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-/workspace/ComfyUI/comfyui_venv/bin/pip install insightface
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/comfyui_controlnet_aux" ]; then
+    git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git
+    cd comfyui_controlnet_aux
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# FramePackI2V
-git clone https://github.com/kijai/ComfyUI-FramePackWrapper.git
-cd ComfyUI-FramePackWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI_LayerStyle" ]; then
+    git clone https://github.com/chflame163/ComfyUI_LayerStyle.git
+    cd ComfyUI_LayerStyle
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-# ComfyUI Essentials
-git clone https://github.com/cubiq/ComfyUI_essentials.git
-cd ComfyUI_essentials
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI_UltimateSDUpscale" ]; then
+    git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale --recursive
+    cd ComfyUI_UltimateSDUpscale
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/Fannovel16/comfyui_controlnet_aux.git
-cd comfyui_controlnet_aux
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/rgthree-comfy" ]; then
+    git clone https://github.com/rgthree/rgthree-comfy.git
+    cd rgthree-comfy
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/chflame163/ComfyUI_LayerStyle.git
-cd ComfyUI_LayerStyle
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-TeaCache" ]; then
+    git clone https://github.com/welltop-cn/ComfyUI-TeaCache.git
+    cd ComfyUI-TeaCache
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale --recursive
-cd ComfyUI_UltimateSDUpscale
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI_Comfyroll_CustomNodes" ]; then
+    git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git
+    cd ComfyUI_Comfyroll_CustomNodes
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/rgthree/rgthree-comfy.git
-cd rgthree-comfy
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-BRIA_AI-RMBG" ]; then
+    git clone https://github.com/ZHO-ZHO-ZHO/ComfyUI-BRIA_AI-RMBG.git
+    cd ComfyUI-BRIA_AI-RMBG
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/welltop-cn/ComfyUI-TeaCache.git
-cd ComfyUI-TeaCache
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-GGUF" ]; then
+    git clone https://github.com/city96/ComfyUI-GGUF.git
+    cd ComfyUI-GGUF
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes.git
-cd ComfyUI_Comfyroll_CustomNodes
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-HunyuanLoom" ]; then
+    git clone https://github.com/logtd/ComfyUI-HunyuanLoom.git
+    cd ComfyUI-HunyuanLoom
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/ZHO-ZHO-ZHO/ComfyUI-BRIA_AI-RMBG.git
-cd ComfyUI-BRIA_AI-RMBG
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/efficiency-nodes-comfyui" ]; then
+    git clone https://github.com/jags111/efficiency-nodes-comfyui.git
+    cd efficiency-nodes-comfyui
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/city96/ComfyUI-GGUF.git
-cd ComfyUI-GGUF
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved" ]; then
+    git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
+    cd ComfyUI-AnimateDiff-Evolved
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/logtd/ComfyUI-HunyuanLoom.git
-cd ComfyUI-HunyuanLoom
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/RES4LYF" ]; then
+    git clone https://github.com/ClownsharkBatwing/RES4LYF.git
+    cd RES4LYF
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/jags111/efficiency-nodes-comfyui.git
-cd efficiency-nodes-comfyui
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-LTXVideo" ]; then
+    git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git
+    cd ComfyUI-LTXVideo
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
-cd ComfyUI-AnimateDiff-Evolved
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/audio-separation-nodes-comfyui" ]; then
+    git clone https://github.com/christian-byrne/audio-separation-nodes-comfyui.git
+    cd audio-separation-nodes-comfyui
+    git fetch origin
+    git reset --hard origin/master
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/ClownsharkBatwing/RES4LYF.git
-cd RES4LYF
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler" ]; then
+    git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git
+    cd ComfyUI-SeedVR2_VideoUpscaler
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/Lightricks/ComfyUI-LTXVideo.git
-cd ComfyUI-LTXVideo
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Custom-Scripts" ]; then
+    git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
+    cd ComfyUI-Custom-Scripts
+    git fetch origin
+    git reset --hard origin/main
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/christian-byrne/audio-separation-nodes-comfyui.git
-cd audio-separation-nodes-comfyui
-git fetch origin
-git reset --hard origin/master
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-NormalCrafterWrapper" ]; then
+    git clone https://github.com/AIWarper/ComfyUI-NormalCrafterWrapper.git
+    cd ComfyUI-NormalCrafterWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git
-cd ComfyUI-SeedVR2_VideoUpscaler
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-DepthCrafter-Nodes" ]; then
+    git clone https://github.com/akatz-ai/ComfyUI-DepthCrafter-Nodes.git
+    cd ComfyUI-DepthCrafter-Nodes
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
-cd ComfyUI-Custom-Scripts
-git fetch origin
-git reset --hard origin/main
-cd /workspace/ComfyUI/custom_nodes
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI_ChatterBox_SRT_Voice" ]; then
+    git clone https://github.com/diodiogod/ComfyUI_ChatterBox_SRT_Voice.git
+    cd ComfyUI_ChatterBox_SRT_Voice
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    cd /workspace/ComfyUI/custom_nodes
+fi
 
-git clone https://github.com/AIWarper/ComfyUI-NormalCrafterWrapper.git
-cd ComfyUI-NormalCrafterWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-
-git clone https://github.com/akatz-ai/ComfyUI-DepthCrafter-Nodes.git
-cd ComfyUI-DepthCrafter-Nodes
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-
-git clone https://github.com/diodiogod/ComfyUI_ChatterBox_SRT_Voice.git
-cd ComfyUI_ChatterBox_SRT_Voice
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-
-git clone https://github.com/melMass/comfy_mtb.git
-cd comfy_mtb
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-cd /workspace/ComfyUI/custom_nodes
-
-git clone https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git
-cd ComfyUI-Hunyuan3DWrapper
-git fetch origin
-git reset --hard origin/main
-/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
-source /workspace/ComfyUI/comfyui_venv/bin/activate
-cd ./hy3dgen/texgen/custom_rasterizer
-/workspace/ComfyUI/comfyui_venv/bin/python setup.py install
-cd ..
-cd ./differentiable_renderer
-/workspace/ComfyUI/comfyui_venv/bin/python setup.py build_ext --inplace
-deactivate
-cd /workspace/ComfyUI/custom_nodes
-
+if [ ! -d "/workspace/ComfyUI/custom_nodes/ComfyUI-Hunyuan3DWrapper" ]; then
+    git clone https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git
+    cd ComfyUI-Hunyuan3DWrapper
+    git fetch origin
+    git reset --hard origin/main
+    /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+    source /workspace/ComfyUI/comfyui_venv/bin/activate
+    cd ./hy3dgen/texgen/custom_rasterizer
+    /workspace/ComfyUI/comfyui_venv/bin/python setup.py install
+    cd ..
+    cd ./differentiable_renderer
+    /workspace/ComfyUI/comfyui_venv/bin/python setup.py build_ext --inplace
+    deactivate
+    cd /workspace/ComfyUI/custom_nodes
+fi
 # Fix onnxruntime for ComfyUI
 echo "Fixing onnxruntime & Installing SageAttention for ComfyUI..."
 cd /workspace/ComfyUI
@@ -310,7 +383,11 @@ cd /workspace/ComfyUI
 /workspace/ComfyUI/comfyui_venv/bin/python -m pip install onnxruntime-gpu hf_transfer
 VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
-/workspace/ComfyUI/comfyui_venv/bin/python -m pip install sageattention
+
+
+if [ ! -d "/workspace/ComfyUI/comfyui_venv/lib/python3.12/site-packages/sageattention" ]; then
+    /workspace/ComfyUI/comfyui_venv/bin/python -m pip install sageattention
+fi
 # Update ComfyUI-Manager config to use auto preview method
 sed -i 's/preview_method = none/preview_method = auto/' /workspace/ComfyUI/user/default/ComfyUI-Manager/config.ini
 

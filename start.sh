@@ -117,6 +117,18 @@ python3.12 -m pip install tensorboard --root-user-action=ignore
 tensorboard --logdir=/workspace/ComfyUI/models/loras --bind_all --path_prefix=/tensorboard --port=$TENSORBOARD_PORT &
 echo "TensorBoard started on /tensorboard endpoint"
 
+if [ -d "/workspace/diffusion-pipe" ]; then
+    execute_script "/scripts/training_tool_scripts/diffpipe_setup.sh" "Running diffpipe setup script..."
+fi
+
+if [ -d "/workspace/fluxgym" ]; then
+    execute_script "/scripts/training_tool_scripts/fluxgym_setup.sh" "Running fluxgym setup script..."
+fi
+
+if [ -d "/workspace/kohya" ]; then
+    execute_script "/scripts/training_tool_scripts/kohya_setup.sh" "Running kohya setup script..."
+fi
+
 echo "Start script(s) finished, pod is ready to use."
 
 wait
