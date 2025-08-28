@@ -30,5 +30,19 @@ aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
     -o "Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
     "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/InfiniteTalk/Wan2_1-InfiniteTalk-Single_fp8_e4m3fn_scaled_KJ.safetensors"
 
+    # Download WanVideo_2_1_Multitalk_14B_fp8_e4m3fn.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/diffusion_models" \
+    -o "WanVideo_2_1_Multitalk_14B_fp8_e4m3fn.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/WanVideo_2_1_Multitalk_14B_fp8_e4m3fn.safetensors"
+
+    # Download split_files/clip_vision/clip_vision_h.safetensors
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/clip_vision" \
+    -o "native_clip_vision_h.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
+
+aria2c -x 16 -s 16 -d "/workspace/ComfyUI/models/text_encoders" \
+    -o "umt5-xxl-enc-bf16.safetensors" --auto-file-renaming=false --conditional-get=true --allow-overwrite=true \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors"
+
 
 echo "All downloads completed!"

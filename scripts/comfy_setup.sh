@@ -275,6 +275,20 @@ git reset --hard origin/main
 /workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
 cd /workspace/ComfyUI/custom_nodes
 
+git clone https://github.com/diodiogod/ComfyUI_ChatterBox_SRT_Voice.git
+cd ComfyUI_ChatterBox_SRT_Voice
+git fetch origin
+git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
+git clone https://github.com/melMass/comfy_mtb.git
+cd comfy_mtb
+git fetch origin
+git reset --hard origin/main
+/workspace/ComfyUI/comfyui_venv/bin/pip install -r requirements.txt
+cd /workspace/ComfyUI/custom_nodes
+
 git clone https://github.com/kijai/ComfyUI-Hunyuan3DWrapper.git
 cd ComfyUI-Hunyuan3DWrapper
 git fetch origin
@@ -296,7 +310,7 @@ cd /workspace/ComfyUI
 /workspace/ComfyUI/comfyui_venv/bin/python -m pip install onnxruntime-gpu hf_transfer
 VENV_PYTHON="/workspace/ComfyUI/comfyui_venv/bin/python"
 PIP_OUTPUT=$("$VENV_PYTHON" -m pip list)
-python -m pip install sageattention
+/workspace/ComfyUI/comfyui_venv/bin/python -m pip install sageattention
 # Update ComfyUI-Manager config to use auto preview method
 sed -i 's/preview_method = none/preview_method = auto/' /workspace/ComfyUI/user/default/ComfyUI-Manager/config.ini
 

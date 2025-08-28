@@ -112,6 +112,9 @@ RUN apt install --yes --no-install-recommends \
     nfs-common \
     zstd
 
+RUN apt-get install -y \
+    portaudio19-dev
+
 # Add the Python PPA
 RUN add-apt-repository ppa:deadsnakes/ppa && apt update
 
